@@ -5,7 +5,6 @@ import { loadStripe } from "@stripe/stripe-js"
 import { useCart } from "@/lib/context/cart-context"
 import { useState } from "react"
 import { medusaClient } from "@/lib/config/medusa-client"
-import { useRouter } from "next/router"
 
 const stripePromise = loadStripe(
   process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || ""
@@ -37,10 +36,9 @@ interface StripeFormProps {
 }
 
 const StripeForm = ({ clientSecret }: StripeFormProps) => {
-  const { cart, refreshCart } = useCart()
+  const { cart, clearCart } = useCart()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const router = useRouter()
 
   const stripe = useStripe()
   const elements = useElements()
@@ -132,9 +130,9 @@ const StripeForm = ({ clientSecret }: StripeFormProps) => {
               console.log("Max retries reached, checking if order was actually created...")
               setError("Order processing - please check your email or contact support if you don't receive confirmation.")
               setLoading(false)
-              // Clear cart anyway since payment succeeded
-              localStorage.removeItem("cart_id")
-              setTimeout(() => router.push("/"), 3000)
+              // Clear cart and create new one since payment succeeded
+              await clearCart()
+              setTimeout(() => { window.location.href = "/" }, 3000)
               return
             }
           } else {
@@ -160,12 +158,12 @@ const StripeForm = ({ clientSecret }: StripeFormProps) => {
       if (response.type === "order" && response.order) {
         // Success! Order placed
         console.log("Order placed successfully:", response.order)
-        // Clear cart from localStorage
-        localStorage.removeItem("cart_id")
+        // Clear cart and create a new one
+        await clearCart()
         // Show success message
         alert("Order placed successfully! Check your email for confirmation.")
-        // Redirect to home page
-        router.push("/")
+        // Use window.location to force a full page reload so cart state refreshes
+        window.location.href = "/"
       }
     } catch (err: any) {
       console.error("Payment error:", err)

@@ -194,7 +194,28 @@ export default async function ({ container }: any) {
       logger.info(`   ✓ ${existingProducts.length} products already exist`)
     }
 
+    // 6. Create Collections
+    logger.info("6. Creating product collections...")
 
+    const collectionsData = [
+      { title: "T-Shirts", handle: "t-shirts" },
+      { title: "Jeans", handle: "jeans" },
+      { title: "Hoodies", handle: "hoodies" }
+    ]
+
+    const existingCollections = await productModule.listProductCollections({})
+
+    if (existingCollections.length === 0) {
+      for (const collectionData of collectionsData) {
+        const collection = await productModule.createProductCollections({
+          title: collectionData.title,
+          handle: collectionData.handle,
+        })
+        logger.info(`   ✓ Created collection: ${collectionData.title}`)
+      }
+    } else {
+      logger.info(`   ✓ ${existingCollections.length} collections already exist`)
+    }
 
     // Final Summary
     logger.info("\n========================================")

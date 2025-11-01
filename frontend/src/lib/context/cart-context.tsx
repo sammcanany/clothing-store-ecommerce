@@ -7,6 +7,7 @@ interface CartContextType {
   updateQuantity: (lineId: string, quantity: number) => Promise<void>
   removeFromCart: (lineId: string) => Promise<void>
   refreshCart: () => Promise<void>
+  clearCart: () => Promise<void>
   cartCount: number
 }
 
@@ -60,9 +61,14 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [])
 
   const addToCart = async (variantId: string, quantity: number) => {
-    if (!cart) return
+    // Always use cart_id from localStorage to ensure we're using the latest cart
+    const cartId = localStorage.getItem('cart_id')
+    if (!cartId) {
+      console.error('No cart ID found')
+      return
+    }
 
-    const response = await sdk.store.cart.createLineItem(cart.id, {
+    const response = await sdk.store.cart.createLineItem(cartId, {
       variant_id: variantId,
       quantity,
     })
@@ -70,18 +76,20 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }
 
   const updateQuantity = async (lineId: string, quantity: number) => {
-    if (!cart) return
+    const cartId = localStorage.getItem('cart_id')
+    if (!cartId) return
 
-    const response = await sdk.store.cart.updateLineItem(cart.id, lineId, {
+    const response = await sdk.store.cart.updateLineItem(cartId, lineId, {
       quantity,
     })
     setCart(response.cart)
   }
 
   const removeFromCart = async (lineId: string) => {
-    if (!cart) return
+    const cartId = localStorage.getItem('cart_id')
+    if (!cartId) return
 
-    const response = await sdk.store.cart.deleteLineItem(cart.id, lineId)
+    const response = await sdk.store.cart.deleteLineItem(cartId, lineId)
     setCart(response.cart)
   }
 
@@ -99,10 +107,36 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }
 
+  const clearCart = async () => {
+    // Clear cart from localStorage and state
+    localStorage.removeItem('cart_id')
+    setCart(null)
+
+    // Create a new cart immediately
+    try {
+      const regionsResponse = await sdk.store.region.list()
+      const regionId = regionsResponse.regions?.[0]?.id
+
+      if (!regionId) {
+        console.error('No regions available')
+        return
+      }
+
+      const response = await sdk.store.cart.create({
+        region_id: regionId
+      })
+      localStorage.setItem('cart_id', response.cart.id)
+      setCart(response.cart)
+      console.log('New cart created after order:', response.cart.id)
+    } catch (error) {
+      console.error('Error creating new cart:', error)
+    }
+  }
+
   const cartCount = cart?.items?.reduce((acc: number, item: any) => acc + item.quantity, 0) || 0
 
   return (
-    <CartContext.Provider value={{ cart, addToCart, updateQuantity, removeFromCart, refreshCart, cartCount }}>
+    <CartContext.Provider value={{ cart, addToCart, updateQuantity, removeFromCart, refreshCart, clearCart, cartCount }}>
       {children}
     </CartContext.Provider>
   )
