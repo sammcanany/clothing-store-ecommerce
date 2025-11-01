@@ -75,29 +75,39 @@ This single command automatically:
 - Creates US region with USD currency
 - Creates and links publishable API key
 - Creates 6 sample products with prices
+- Creates 3 product collections (T-Shirts, Jeans, Hoodies)
+- Assigns products to collections automatically
 - Links products to sales channel
 
-**Copy the API key and Region ID shown in the output!** You'll need them for the next step.
+**Copy the API key, Region ID, and Sales Channel ID shown in the output!** You'll need them for the next step.
 
 **Optional**: To use custom admin credentials, set `ADMIN_EMAIL` and `ADMIN_PASSWORD` in your `.env` file before running this step.
 
 ### 4. Update Environment with API Keys
 
-Edit your `.env` file (or `docker-compose.yml` if not using .env) and add the API key and Region ID from Step 3:
+Edit your `.env` file (or `docker-compose.yml` if not using .env) and add the values from Step 3:
 
 ```bash
 # In .env file:
 NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY=pk_your_actual_key_from_setup
 NEXT_PUBLIC_MEDUSA_REGION_ID=reg_your_actual_id_from_setup
+NEXT_PUBLIC_MEDUSA_SALES_CHANNEL_ID=sc_your_actual_id_from_setup
 ```
 
 ### 5. Restart All Services
 
+**Recommended (most reliable):**
+```bash
+docker compose down
+docker compose up -d
+```
+
+**Alternative (quick restart):**
 ```bash
 docker compose restart
 ```
 
-**Note**: This restarts all containers to pick up the new environment variables.
+**Note**: Full restart is more reliable for picking up environment variable changes.
 
 ### 6. Access Your Store
 
@@ -245,18 +255,21 @@ The store is pre-configured with Stripe payment provider. To enable payments:
 1. Create a [Stripe account](https://stripe.com/) (if you don't have one)
 2. Go to [Stripe Dashboard > Developers > API keys](https://dashboard.stripe.com/apikeys)
 3. Copy your **Secret key** (starts with `sk_test_` for test mode)
+4. Copy your **Publishable key** (starts with `pk_test_` for test mode)
 
 ### 2. Configure Stripe
 
-Add your Stripe secret key to your environment:
+Add your Stripe keys to your environment:
 
 ```bash
 # In .env file (if using environment file):
 STRIPE_API_KEY=sk_test_51...
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_51...
 
 # Or in docker-compose.yml:
 environment:
   STRIPE_API_KEY: sk_test_51...
+  NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: pk_test_51...
 ```
 
 ### 3. Enable Stripe in Region
@@ -505,37 +518,6 @@ docker exec clothing-store-db psql -U medusa_user -d medusa_db -c "DELETE FROM p
 docker exec clothing-store-backend npm run setup
 ```
 
-## Package Updates
-
-The project uses stable, tested package versions. To check for updates:
-
-```bash
-# Backend updates
-cd backend && npm outdated
-
-# Frontend updates
-cd frontend && npm outdated
-```
-
-### Safe Updates (Recommended)
-```bash
-# Update patch/minor versions only
-cd backend && npm update
-cd frontend && npm update
-```
-
-### Major Version Updates (Advanced)
-⚠️ **Test thoroughly before deploying** - Major updates may have breaking changes:
-
-- **Next.js 15**: Significant performance improvements but API changes
-- **React 19**: New features but potential compatibility issues
-- **TanStack Query 5**: Simplified API but migration needed
-
-```bash
-# Update all packages (use with caution)
-npm update --save
-```
-
 The `complete-setup.ts` script handles:
 - Sales channel creation
 - Region setup (United States, USD)
@@ -544,7 +526,7 @@ The `complete-setup.ts` script handles:
 - Product creation with variants
 - Price configuration
 - Product to sales channel linking
-- Frontend environment variable update
+- Collection creation and product assignment
 
 No manual steps required!
 
@@ -607,6 +589,8 @@ frontend:
     NEXT_PUBLIC_BASE_URL: https://yourstore.com
     NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY: pk_your_api_key_from_setup
     NEXT_PUBLIC_MEDUSA_REGION_ID: reg_your_region_id_from_setup
+    NEXT_PUBLIC_MEDUSA_SALES_CHANNEL_ID: sc_your_sales_channel_id_from_setup
+    NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: pk_test_51... # If using Stripe
 ```
 
 ### Additional Production Requirements:
