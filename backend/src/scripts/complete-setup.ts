@@ -194,7 +194,7 @@ export default async function ({ container }: any) {
       logger.info(`   ✓ ${existingProducts.length} products already exist`)
     }
 
-    // 6. Create Collections
+    // 6. Create Collections and assign products
     logger.info("6. Creating product collections...")
 
     const collectionsData = [
@@ -203,7 +203,7 @@ export default async function ({ container }: any) {
       { title: "Hoodies", handle: "hoodies" }
     ]
 
-    const existingCollections = await productModule.listProductCollections({})
+    let existingCollections = await productModule.listProductCollections({})
 
     if (existingCollections.length === 0) {
       for (const collectionData of collectionsData) {
@@ -213,8 +213,47 @@ export default async function ({ container }: any) {
         })
         logger.info(`   ✓ Created collection: ${collectionData.title}`)
       }
+      // Refresh the list after creating
+      existingCollections = await productModule.listProductCollections({})
     } else {
       logger.info(`   ✓ ${existingCollections.length} collections already exist`)
+    }
+
+    // 7. Assign products to collections based on product titles
+    logger.info("7. Assigning products to collections...")
+
+    const allProducts = await productModule.listProducts({})
+    const collections = await productModule.listProductCollections({})
+
+    // Find collections by handle
+    const tshirtCollection = collections.find((c: any) => c.handle === "t-shirts")
+    const jeansCollection = collections.find((c: any) => c.handle === "jeans")
+    const hoodiesCollection = collections.find((c: any) => c.handle === "hoodies")
+
+    for (const product of allProducts) {
+      const productTitle = product.title.toLowerCase()
+      let collectionId = null
+
+      // Match products to collections based on title keywords
+      if (productTitle.includes("t-shirt") || productTitle.includes("tshirt")) {
+        collectionId = tshirtCollection?.id
+      } else if (productTitle.includes("jean") || productTitle.includes("denim")) {
+        collectionId = jeansCollection?.id
+      } else if (productTitle.includes("hoodie") || productTitle.includes("sweatshirt")) {
+        collectionId = hoodiesCollection?.id
+      }
+
+      // Assign product to collection if matched
+      if (collectionId) {
+        try {
+          await productModule.updateProducts(product.id, {
+            collection_id: collectionId
+          })
+          logger.info(`   ✓ Assigned "${product.title}" to collection`)
+        } catch (error: any) {
+          logger.warn(`   ⚠ Could not assign "${product.title}": ${error.message}`)
+        }
+      }
     }
 
     // Final Summary
