@@ -293,20 +293,22 @@ Then edit the three lines and save.
 
 ### Step 5: Restart Everything
 
-Now restart the containers so they pick up your new configuration:
+Now restart the containers so they pick up your new configuration.
 
+**Recommended - Full restart (most reliable):**
+```bash
+docker compose down
+docker compose up -d
+```
+
+**Wait time:** 30-60 seconds
+
+**Alternative - Quick restart (might not always work):**
 ```bash
 docker compose restart
 ```
 
-**Wait time:** 10-20 seconds
-
-If products don't show up on your site, do a full rebuild:
-```bash
-docker compose down
-docker compose up -d --build
-```
-**Wait time:** 2-3 minutes
+If you used the quick restart and products still don't show up, use the full restart method above.
 
 ### Step 6: Open Your Store!
 
