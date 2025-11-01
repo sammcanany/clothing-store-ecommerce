@@ -36,7 +36,7 @@ docker compose version
 
 ## Quick Start (6 Steps)
 
-### 1. Configure Environment (Optional)
+### 1. Configure Environment
 
 For custom ports, domains, or credentials, copy and edit the environment file:
 
