@@ -1,0 +1,58 @@
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Dependencies
+node_modules
+.pnp
+.pnp.js
+
+# Testing
+coverage
+
+# Next.js
+.next/
+out/
+build
+dist/
+
+# Misc
+.DS_Store
+*.pem
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Local env files
+.env
+.env*.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Vercel
+.vercel
+
+# Uploads
+uploads/
+
+# IDEs
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# Docker
+postgres_data/
+
+# Medusa
+.cache/
+.medusa/
+data/
+
+# Export script
+export-clean.ps1

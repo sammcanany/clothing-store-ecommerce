@@ -1,0 +1,633 @@
+# Clothing Store - E-Commerce Platform
+
+A modern, fully automated e-commerce platform built with Next.js and Medusa 2.11.1. Complete setup in 4 simple commands!
+
+## Tech Stack
+
+- **Frontend**: Next.js 14, React 18, Tailwind CSS (Node.js 22)
+- **Backend**: Medusa v2.11.1 (headless commerce, Node.js 22)
+- **Database**: PostgreSQL 15
+- **Cache**: Redis 7
+- **Containerization**: Docker & Docker Compose
+
+## Features
+
+- Clean, responsive UI optimized for clothing retail
+- Full shopping cart and checkout functionality
+- Fully automated setup with one script
+- Complete Docker containerization
+- Admin panel for store management
+- Real-time pricing with tax calculation
+- Product images from Unsplash
+- Mobile-responsive design
+
+## Prerequisites
+
+- **Docker Desktop** installed and running
+  - Windows: [Download here](https://docs.docker.com/desktop/install/windows-install/) (Windows 10 64-bit or later, WSL 2 enabled)
+  - macOS: [Download here](https://docs.docker.com/desktop/install/mac-install/) (macOS 11 or newer)
+
+Verify installation:
+```bash
+docker --version
+docker compose version
+# If docker compose doesn't work, try: docker-compose --version
+```
+
+## Quick Start (6 Steps)
+
+### 1. Configure Environment (Optional)
+
+For custom ports, domains, or credentials, copy and edit the environment file:
+
+```bash
+cp .env.example .env
+# Edit .env with your values
+```
+
+If you skip this step, default values will be used (localhost, port 9000/3000, etc.)
+
+### 2. Start Docker Containers
+
+```bash
+cd "E-Commerce Site"
+docker compose up -d
+```
+
+Wait ~60 seconds for health checks. This starts all services:
+- PostgreSQL database (port 5432)
+- Redis cache (port 6379)  
+- Medusa backend (port 9000)
+- Next.js frontend (port 3000)
+
+**Note**: First startup takes 5-10 minutes to download images and install dependencies.
+
+### 3. Run Complete Setup
+
+```bash
+docker exec clothing-store-backend npm run full-setup
+```
+
+This single command automatically:
+- Runs database migrations
+- Creates admin user (default: admin@test.com / supersecret)
+- Creates sales channel
+- Creates US region with USD currency
+- Creates and links publishable API key
+- Creates 6 sample products with prices
+- Links products to sales channel
+
+**Copy the API key and Region ID shown in the output!** You'll need them for the next step.
+
+**Optional**: To use custom admin credentials, set `ADMIN_EMAIL` and `ADMIN_PASSWORD` in your `.env` file before running this step.
+
+### 4. Update Environment with API Keys
+
+Edit your `.env` file (or `docker-compose.yml` if not using .env) and add the API key and Region ID from Step 3:
+
+```bash
+# In .env file:
+NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY=pk_your_actual_key_from_setup
+NEXT_PUBLIC_MEDUSA_REGION_ID=reg_your_actual_id_from_setup
+```
+
+### 5. Restart All Services
+
+```bash
+docker compose restart
+```
+
+**Note**: This restarts all containers to pick up the new environment variables.
+
+### 6. Access Your Store
+
+- **Storefront**: http://localhost:3000
+- **Admin Panel**: http://localhost:9000/app
+  - Email: `admin@test.com`
+  - Password: `supersecret`
+
+## Package Updates
+
+The project uses stable, tested package versions. To check for updates:
+
+```bash
+# Backend updates
+cd backend && npm outdated
+
+# Frontend updates
+cd frontend && npm outdated
+```
+
+### Safe Updates (Recommended)
+```bash
+# Update patch/minor versions only
+cd backend && npm update
+cd frontend && npm update
+```
+
+### Major Version Updates (Advanced)
+⚠️ **Test thoroughly before deploying** - Major updates may have breaking changes:
+
+- **Next.js 15**: Significant performance improvements but API changes
+- **React 19**: New features but potential compatibility issues
+- **TanStack Query 5**: Simplified API but migration needed
+
+**To apply package updates:**
+```bash
+# Rebuild with updated packages
+docker compose down
+docker compose up -d --build
+
+# If build fails with npm errors, clean and retry
+docker system prune -f
+docker compose build --no-cache backend
+docker compose up -d
+```
+
+## Sample Products
+
+The setup creates 6 ready-to-sell products:
+- Classic White T-Shirt ($29.99)
+- Slim Fit Jeans ($59.99)
+- Leather Jacket ($199.99)
+- Running Shoes ($89.99)
+- Cotton Hoodie ($49.99)
+- Denim Jacket ($79.99)
+
+## Product Management (Admin Panel)
+
+Once your store is running, use the admin panel to manage your products. Access it at: http://localhost:9000/app
+
+### Add New Products
+
+1. **Login** with `admin@test.com` / `supersecret`
+2. **Go to Products** in the sidebar
+3. **Click "Create"** in the top right
+4. **Fill in product details:**
+   - Title, subtitle, description
+   - Handle (URL slug)
+   - Material, weight, dimensions
+   - Status (Published/Draft)
+5. **Add media:** Upload product images
+6. **Set thumbnail:** Choose main product image
+7. **Add variants:** Different sizes, colors, prices
+8. **Set pricing:** Add prices for different regions
+9. **Organize:** Add to collections and categories
+10. **Save product**
+
+### Edit Existing Products
+
+1. **Go to Products** page
+2. **Click on any product** to open details
+3. **Edit details:** Click ⋮ menu → Edit
+4. **Manage images:** Add, reorder, delete, set thumbnail
+5. **Update variants:** Add sizes, change prices
+6. **Change status:** Published/Draft
+7. **Organize:** Move between collections/categories
+
+### Product Variants
+
+Each product can have multiple variants (sizes, colors, etc.):
+
+1. **Open product details**
+2. **Go to Variants section**
+3. **Click "Create"** to add new variant
+4. **Set options:** Size, color, etc.
+5. **Set pricing:** Different prices per variant
+6. **Set inventory:** Stock levels per variant
+
+### Product Collections
+
+Organize products into collections:
+
+1. **Go to Products → Collections**
+2. **Create collection:** Name and handle
+3. **Add products:** Select products to include
+4. **Edit collection:** Change name, products
+
+### Product Categories
+
+Create hierarchical categories:
+
+1. **Go to Products → Categories**
+2. **Create category:** Name, handle, description
+3. **Add products:** Assign products to categories
+4. **Nested categories:** Create subcategories
+
+### Delete Products
+
+**Warning:** Deleting is permanent!
+
+1. **Open product details**
+2. **Click ⋮ menu → Delete**
+3. **Confirm deletion**
+
+### Bulk Operations
+
+- **Select multiple products** using checkboxes
+- **Export products** to CSV
+- **Import products** from CSV
+- **Bulk edit** status, collections, etc.
+
+### Product Status
+
+- **Published:** Visible on storefront
+- **Draft:** Hidden, work in progress
+- **Proposed:** Awaiting approval
+- **Rejected:** Not approved for publishing
+
+## Payment Setup (Stripe)
+
+The store is pre-configured with Stripe payment provider. To enable payments:
+
+### 1. Get Stripe API Keys
+
+1. Create a [Stripe account](https://stripe.com/) (if you don't have one)
+2. Go to [Stripe Dashboard > Developers > API keys](https://dashboard.stripe.com/apikeys)
+3. Copy your **Secret key** (starts with `sk_test_` for test mode)
+
+### 2. Configure Stripe
+
+Add your Stripe secret key to your environment:
+
+```bash
+# In .env file (if using environment file):
+STRIPE_API_KEY=sk_test_51...
+
+# Or in docker-compose.yml:
+environment:
+  STRIPE_API_KEY: sk_test_51...
+```
+
+### 3. Enable Stripe in Region
+
+1. Start the containers: `docker-compose up -d`
+2. Open Admin Panel: http://localhost:9000/app
+3. Login with: `admin@test.com` / `supersecret`
+4. Go to **Settings > Regions**
+5. Click on your region (e.g., "Default Region")
+6. Click the **⋮** menu > **Edit**
+7. In **Payment Providers** field, select **"Stripe (STRIPE)"**
+8. Click **Save**
+
+### 4. Test Payments
+
+- Use test card: `4242 4242 4242 4242`
+- Any future expiry date and CVC
+- See [Stripe test cards](https://stripe.com/docs/testing#cards)
+
+## Email Setup (SendGrid)
+
+The store is pre-configured with SendGrid for email notifications. To enable emails:
+
+### 1. Get SendGrid API Key
+
+1. Create a [SendGrid account](https://signup.sendgrid.com/) (if you don't have one)
+2. Go to [SendGrid Dashboard > Settings > API Keys](https://app.sendgrid.com/settings/api_keys)
+3. Create a new API key with "Full Access" permissions
+4. Copy the API key (starts with `SG.`)
+
+### 2. Verify Sender Email
+
+1. In SendGrid Dashboard, go to **Settings > Sender Authentication**
+2. Verify a single sender or authenticate your domain
+3. Use the verified email as your `SENDGRID_FROM_EMAIL`
+
+### 3. Configure SendGrid
+
+Add your SendGrid credentials to your environment:
+
+```bash
+# In .env file (if using environment file):
+SENDGRID_API_KEY=SG.YourApiKeyHere
+SENDGRID_FROM_EMAIL=noreply@yourstore.com
+
+# Or in docker-compose.yml:
+environment:
+  SENDGRID_API_KEY: SG.YourApiKeyHere
+  SENDGRID_FROM_EMAIL: noreply@yourstore.com
+```
+
+### 4. Test Emails
+
+SendGrid will automatically send emails for:
+- Order confirmations
+- Shipping updates
+- Password resets
+- Admin notifications
+
+**Note**: SendGrid offers 100 free emails per day, then $15+/month for higher volumes.
+
+## Development
+
+### Useful Commands
+
+```bash
+# Run complete setup (creates products, API keys, etc.)
+docker exec clothing-store-backend npm run setup
+
+# View all logs
+docker compose logs -f
+
+# View specific service logs
+docker compose logs -f backend
+docker compose logs -f frontend
+
+# Restart all services
+docker compose restart
+
+# Restart specific service
+docker compose restart backend
+
+# Stop all services
+docker compose down
+
+# Stop and remove all data (complete reset)
+docker compose down -v
+
+# Rebuild after code changes
+docker compose up -d --build
+```
+
+### Add More Products
+
+Option 1: **Admin Panel** (Recommended)
+1. Go to http://localhost:9000/app
+2. Navigate to **Products** → **Add Product**
+3. Fill details, add variants, set prices
+4. Assign to "Default Sales Channel"
+
+Option 2: **Programmatically**
+Edit `backend/src/scripts/complete-setup.ts` and add more products, then rerun.
+
+## Project Structure
+
+```
+E-Commerce Site/
+├── docker-compose.yml          # Docker orchestration
+├── backend/                    # Medusa v2 backend
+│   ├── Dockerfile
+│   ├── medusa-config.ts       # Medusa configuration
+│   └── src/
+│       ├── api/               # Custom API routes
+│       ├── scripts/
+│       │   └── complete-setup.ts  # Automated store setup
+│       └── subscribers/       # Event subscribers
+├── frontend/                   # Next.js storefront
+│   ├── Dockerfile
+│   ├── .env.local             # Auto-generated API keys
+│   └── src/
+│       ├── pages/             # Next.js routes
+│       ├── components/        # React components
+│       └── lib/               # Hooks & utilities
+└── README.md
+```
+
+## Troubleshooting
+
+### Products Not Showing
+
+The complete-setup script handles everything automatically. If products still don't appear:
+
+```bash
+# Restart frontend to pick up new config
+docker compose restart frontend
+
+# Check backend is running
+docker compose ps
+
+# View backend logs for errors
+docker compose logs backend --tail 50
+```
+
+### Backend Won't Start
+
+```bash
+# Check logs for specific error
+docker compose logs backend --tail 50
+
+# Rebuild without cache
+docker compose build --no-cache backend
+docker compose up -d backend
+```
+
+### Port Already in Use
+
+Edit `docker-compose.yml` to change conflicting ports:
+
+```yaml
+ports:
+  - "3001:3000"  # Change frontend to port 3001
+  - "9001:9000"  # Change backend to port 9001
+```
+
+### Complete Fresh Start
+
+```bash
+# Stop everything and delete all data
+docker-compose down -v
+
+# Start fresh
+docker-compose up -d
+
+# Wait 60 seconds, then run setup
+docker exec clothing-store-backend npx medusa user -e admin@test.com -p supersecret
+docker exec clothing-store-backend npm run setup
+```
+
+## Production Deployment
+
+### Environment Variables
+
+Create `.env.production` files:
+
+**Backend (`backend/.env.production`):**
+```env
+DATABASE_URL=your_production_database_url
+REDIS_URL=your_production_redis_url
+JWT_SECRET=generate_strong_secret
+COOKIE_SECRET=generate_strong_secret
+STORE_CORS=https://yourdomain.com
+STRIPE_API_KEY=sk_live_51...
+```
+
+**Frontend (`frontend/.env.production`):**
+```env
+NEXT_PUBLIC_MEDUSA_BACKEND_URL=https://api.yourdomain.com
+```
+
+### Recommended Hosting
+
+- **Frontend**: [Vercel](https://vercel.com) (Next.js optimized)
+- **Backend**: [Railway](https://railway.app), [Render](https://render.com), or [DigitalOcean](https://digitalocean.com)
+- **Database**: [Supabase](https://supabase.com), [Railway](https://railway.app), or [Neon](https://neon.tech)
+- **Redis**: [Upstash](https://upstash.com) or Railway
+
+## Development Commands
+
+### Windows (Command Prompt)
+
+```cmd
+# Start all services
+docker-compose up -d
+
+# Stop all services
+## Advanced
+
+### Access Container Shells
+
+```bash
+# Backend shell
+docker exec -it clothing-store-backend sh
+
+# Frontend shell  
+docker exec -it clothing-store-frontend sh
+
+# Database shell
+docker exec -it clothing-store-db psql -U medusa_user -d medusa_db
+```
+
+### Modify Sample Products
+
+Edit `backend/src/scripts/complete-setup.ts` to customize:
+- Product names and descriptions
+- Prices
+- Images (use any Unsplash URL)
+- Quantities and variants
+
+### Reset Specific Data
+
+```bash
+# Delete all products (keeps other data)
+docker exec clothing-store-db psql -U medusa_user -d medusa_db -c "DELETE FROM product CASCADE"
+
+# Rerun setup to recreate products
+docker exec clothing-store-backend npm run setup
+```
+
+## Package Updates
+
+The project uses stable, tested package versions. To check for updates:
+
+```bash
+# Backend updates
+cd backend && npm outdated
+
+# Frontend updates
+cd frontend && npm outdated
+```
+
+### Safe Updates (Recommended)
+```bash
+# Update patch/minor versions only
+cd backend && npm update
+cd frontend && npm update
+```
+
+### Major Version Updates (Advanced)
+⚠️ **Test thoroughly before deploying** - Major updates may have breaking changes:
+
+- **Next.js 15**: Significant performance improvements but API changes
+- **React 19**: New features but potential compatibility issues
+- **TanStack Query 5**: Simplified API but migration needed
+
+```bash
+# Update all packages (use with caution)
+npm update --save
+```
+
+The `complete-setup.ts` script handles:
+- Sales channel creation
+- Region setup (United States, USD)
+- Publishable API key generation
+- API key to sales channel linking
+- Product creation with variants
+- Price configuration
+- Product to sales channel linking
+- Frontend environment variable update
+
+No manual steps required!
+
+## Next Steps
+
+After setup, you can:
+
+1. **Customize Branding**
+   - Edit `frontend/src/components/layout/Header.tsx`
+   - Modify colors in `frontend/tailwind.config.js`
+
+2. **Add Real Products**
+   - Use admin panel at http://localhost:9000/app
+   - Upload your product images
+   - Set actual prices
+
+3. **Configure Payments**
+   - Add Stripe or PayPal in admin
+   - Set up payment processing
+
+4. **Deploy to Production** - See section below
+
+---
+
+## Production Deployment
+
+To make this production-ready, update these settings in `docker-compose.yml`:
+
+### Backend Environment Variables (Required):
+
+```yaml
+backend:
+  environment:
+    # Database - Use strong password
+    DATABASE_URL: postgres://medusa_user:YOUR_STRONG_PASSWORD@postgres:5432/medusa_db
+    
+    # Security Secrets - Generate random 32+ character strings
+    JWT_SECRET: YOUR_RANDOM_JWT_SECRET_HERE
+    COOKIE_SECRET: YOUR_RANDOM_COOKIE_SECRET_HERE
+    
+    # CORS - Replace with your actual domains
+    STORE_CORS: https://yourstore.com
+    ADMIN_CORS: https://admin.yourstore.com
+    AUTH_CORS: https://yourstore.com,https://admin.yourstore.com
+    
+    # Admin Credentials - Change from defaults
+    ADMIN_EMAIL: your-email@example.com
+    ADMIN_PASSWORD: your-secure-password
+    
+    # Environment
+    NODE_ENV: production
+```
+
+### Frontend Environment Variables (Required):
+
+```yaml
+frontend:
+  environment:
+    NEXT_PUBLIC_MEDUSA_BACKEND_URL: https://api.yourstore.com
+    NEXT_PUBLIC_BASE_URL: https://yourstore.com
+    NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY: pk_your_api_key_from_setup
+    NEXT_PUBLIC_MEDUSA_REGION_ID: reg_your_region_id_from_setup
+```
+
+### Additional Production Requirements:
+
+1. **SSL/HTTPS**: Use nginx or Caddy as reverse proxy with Let's Encrypt certificates
+2. **Database Backups**: Set up automated PostgreSQL backups
+3. **File Storage**: Configure AWS S3 or similar for product images instead of local volumes
+4. **Monitoring**: Add error tracking (Sentry) and uptime monitoring
+5. **Rate Limiting**: Implement API rate limiting to prevent abuse
+6. **Firewall**: Restrict database/redis ports, only expose 80/443
+
+### Generate Secure Secrets:
+
+```bash
+# Generate random secrets (Linux/Mac)
+openssl rand -base64 32
+
+# Windows PowerShell
+-join ((65..90) + (97..122) + (48..57) | Get-Random -Count 32 | % {[char]$_})
+```
+
+---
+
+**Ready to sell in 5 commands**

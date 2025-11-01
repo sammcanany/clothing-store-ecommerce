@@ -1,0 +1,44 @@
+{
+  "name": "clothing-store-backend",
+  "version": "2.0.0",
+  "description": "Medusa 2.11.1 backend for clothing e-commerce store",
+  "scripts": {
+    "build": "npx medusa build",
+    "setup": "npx medusa exec ./src/scripts/complete-setup.ts",
+    "full-setup": "npx medusa db:migrate && npm run setup",
+    "start": "npm run build && npx medusa start",
+    "dev": "npx medusa develop",
+    "test:integration:http": "TEST_TYPE=integration:http NODE_OPTIONS=--experimental-vm-modules jest --silent=false --runInBand --forceExit",
+    "test:integration:modules": "TEST_TYPE=integration:modules NODE_OPTIONS=--experimental-vm-modules jest --silent=false --runInBand --forceExit",
+    "test:unit": "TEST_TYPE=unit NODE_OPTIONS=--experimental-vm-modules jest --silent --runInBand --forceExit"
+  },
+  "dependencies": {
+    "@medusajs/admin-bundler": "2.11.1",
+    "@medusajs/admin-sdk": "2.11.1",
+    "@medusajs/cli": "2.11.1",
+    "@medusajs/framework": "2.11.1",
+    "@medusajs/medusa": "2.11.1",
+    "@medusajs/utils": "2.11.1",
+    "@medusajs/types": "2.11.1"
+  },
+  "devDependencies": {
+    "@medusajs/test-utils": "2.11.1",
+    "@swc/core": "1.14.0",
+    "@swc/jest": "^0.2.36",
+    "@types/jest": "^29.5.14",
+    "@types/node": "^20.19.24",
+    "@types/react": "^18.3.26",
+    "@types/react-dom": "^18.3.7",
+    "jest": "^29.7.0",
+    "prop-types": "^15.8.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.6.2",
+    "vite": "^5.4.21"
+  },
+  "overrides": {
+    "axios": "1.6.0",
+    "esbuild": "0.25.0"
+  }
+}
