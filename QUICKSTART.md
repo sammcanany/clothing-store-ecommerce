@@ -61,7 +61,57 @@ Docker is like a container that runs your entire store. It handles all the techn
 
 You need to get the store files onto your computer. There are two ways to do this:
 
-### Option A: Download as ZIP (Easiest)
+### Option A: Use Git (Recommended)
+
+**Why Git?** If the store gets updated, you can easily pull the latest changes with one command. You can also share updates with others working on the store.
+
+1. **Install Git:**
+   - **Mac:** Open Terminal (press Cmd+Space, type "Terminal", press Enter) and run:
+     ```bash
+     git --version
+     ```
+     If Git isn't installed, macOS will prompt you to install it. Click "Install" and follow the prompts.
+
+   - **Windows:**
+     1. Download Git from [https://git-scm.com/download/win](https://git-scm.com/download/win)
+     2. Run the installer
+     3. Use all default settings (just keep clicking "Next")
+     4. When finished, search for "Git Bash" in Start Menu and open it
+
+   - **Linux:** Open terminal and run:
+     ```bash
+     sudo apt-get install git
+     ```
+     (Ubuntu/Debian) or `sudo yum install git` (Fedora/RedHat)
+
+2. **Clone the repository:**
+
+   Open your terminal (Terminal on Mac/Linux, Git Bash on Windows) and run:
+
+   **Mac/Linux:**
+   ```bash
+   cd ~/Desktop
+   git clone https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git
+   cd YOUR_REPO_NAME
+   ```
+
+   **Windows (in Git Bash):**
+   ```bash
+   cd ~/Desktop
+   git clone https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git
+   cd YOUR_REPO_NAME
+   ```
+
+   Replace `YOUR_USERNAME/YOUR_REPO_NAME` with the actual GitHub repository path.
+
+   **To get updates later:**
+   ```bash
+   git pull
+   ```
+
+### Option B: Download as ZIP (Quick but no updates)
+
+**Note:** With this method, you won't be able to easily get updates. You'll need to re-download the entire ZIP each time.
 
 1. If you received this as a GitHub link:
    - Go to the GitHub page
@@ -69,20 +119,10 @@ You need to get the store files onto your computer. There are two ways to do thi
    - Click "Download ZIP"
    - Find the ZIP file in your Downloads folder (will be named something like `clothing-store-ecommerce-main.zip`)
    - Double-click to unzip it (creates a folder like `clothing-store-ecommerce-main`)
-   - You can rename it to something simpler if you want (e.g., "my-store")
-   - Move the unzipped folder to an easy location like your Desktop
+   - Move the unzipped folder to your Desktop
 
 2. If you received this as a folder:
    - Move it to an easy location (like your Desktop)
-
-### Option B: Use Git (If you want to learn)
-
-1. Install Git first:
-   - Mac: Open Terminal (press Cmd+Space, type "Terminal") and run: `git --version` (it will prompt to install if not present)
-   - Windows: Download from [https://git-scm.com/download/win](https://git-scm.com/download/win)
-   - Linux: Run `sudo apt-get install git` (Ubuntu/Debian) or `sudo yum install git` (Fedora/RedHat)
-
-2. Clone the repository (we'll explain the Terminal in the next section)
 
 ---
 
@@ -112,6 +152,10 @@ The "terminal" or "command line" is where you type commands to control your comp
 ## Part 4: Navigate to Your Store Folder
 
 In the terminal, you need to "go to" the folder where you put the store files. We call this "changing directory" or "cd" for short.
+
+**If you used Git (Option A):** You're already in the right folder! Skip to Part 5.
+
+**If you downloaded the ZIP (Option B):** Follow the instructions below.
 
 **Copy one of these commands based on where you put the folder:**
 
@@ -186,11 +230,14 @@ docker exec clothing-store-backend npm run full-setup
 
 **Important:** At the end, you'll see output like this:
 ```
-API Key: pk_8e72e9c4fa72631d68dcbca4140ffa1fbe2522918e5f7ce62f2d8fbc2f27dd73
-Region ID: reg_01K8YR6D3SGK4AQ0046QCM8YBV
+⚠ NEXT STEPS:
+1. Update .env file - Add these values:
+   NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY=pk_01abc123def456...
+   NEXT_PUBLIC_MEDUSA_REGION_ID=reg_01xyz789...
+   NEXT_PUBLIC_MEDUSA_SALES_CHANNEL_ID=sc_01abc456...
 ```
 
-**COPY THESE TWO VALUES!** Write them down or keep the terminal window open. You'll need them in the next step.
+**COPY THESE THREE VALUES!** Write them down or keep the terminal window open. You'll need them in the next step. They will be unique keys generated specifically for your store.
 
 ### Step 4: Configure Your Environment Variables
 
@@ -219,10 +266,11 @@ Now you need to create a configuration file with those keys you just copied.
    - Windows: Right-click → Open With → Notepad
    - Linux: Right-click → Open With → gedit or Text Editor
 
-5. Find these two lines and replace the values with what you copied from Step 3:
+5. Find these three lines and replace the values with what you copied from Step 3:
    ```
    NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY=pk_your_actual_key_here
    NEXT_PUBLIC_MEDUSA_REGION_ID=reg_your_actual_id_here
+   NEXT_PUBLIC_MEDUSA_SALES_CHANNEL_ID=sc_your_actual_id_here
    ```
 
 6. Save the file (Cmd+S on Mac, Ctrl+S on Windows/Linux)
@@ -234,14 +282,14 @@ Now you need to create a configuration file with those keys you just copied.
 cp .env.example .env
 nano .env
 ```
-Then use arrow keys to navigate, edit the two lines, press `Ctrl+X`, then `Y`, then Enter to save.
+Then use arrow keys to navigate, edit the three lines, press `Ctrl+X`, then `Y`, then Enter to save.
 
 **Windows:**
 ```powershell
 copy .env.example .env
 notepad .env
 ```
-Then edit the two lines and save.
+Then edit the three lines and save.
 
 ### Step 5: Restart Everything
 
