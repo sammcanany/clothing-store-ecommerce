@@ -12,7 +12,7 @@ That's it! Docker includes everything you need - Node.js, npm, databases, etc. a
 
 ## Setup (6 Steps)
 
-### Step 1: Configure Environment (Optional)
+### Step 1: Configure Environment
 
 For custom ports, domains, or credentials:
 
