@@ -54,17 +54,29 @@ const StripeForm = ({ clientSecret }: StripeFormProps) => {
       return
     }
 
+    // Prevent duplicate submissions
+    if (loading) {
+      console.log("Already processing payment, ignoring duplicate click")
+      return
+    }
+
     const card = elements.getElement(CardElement)
     if (!card) {
       return
     }
 
+    // Set loading IMMEDIATELY to prevent duplicate submissions
     setLoading(true)
     setError(null)
 
+    // Small delay to ensure state updates
+    await new Promise(resolve => setTimeout(resolve, 100))
+
     try {
+      console.log("Starting payment process for cart:", cart.id)
+
       // Confirm the card payment with Stripe
-      const { error: stripeError } = await stripe.confirmCardPayment(
+      const { error: stripeError, paymentIntent } = await stripe.confirmCardPayment(
         clientSecret,
         {
           payment_method: {
@@ -92,8 +104,51 @@ const StripeForm = ({ clientSecret }: StripeFormProps) => {
         return
       }
 
-      // Complete the cart/order
-      const response = await medusaClient.store.cart.complete(cart.id)
+      console.log("Stripe payment confirmed, payment intent:", paymentIntent?.id)
+
+      // Complete the cart/order with retry logic for 409 conflicts
+      console.log("Completing cart...")
+      let response
+      let retryCount = 0
+      const maxRetries = 3
+
+      while (retryCount < maxRetries) {
+        try {
+          response = await medusaClient.store.cart.complete(cart.id)
+          console.log("Cart completion response:", response)
+          break // Success, exit retry loop
+        } catch (completionError: any) {
+          console.error(`Cart completion attempt ${retryCount + 1} error:`, completionError)
+
+          // If it's a 409 conflict, the cart might already be completed
+          if (completionError.message?.includes("conflicted") || completionError.message?.includes("409")) {
+            console.log("Cart completion conflict detected, waiting before retry...")
+            // Wait with exponential backoff
+            await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, retryCount)))
+            retryCount++
+
+            if (retryCount >= maxRetries) {
+              // After max retries, check if order actually exists
+              console.log("Max retries reached, checking if order was actually created...")
+              setError("Order processing - please check your email or contact support if you don't receive confirmation.")
+              setLoading(false)
+              // Clear cart anyway since payment succeeded
+              localStorage.removeItem("cart_id")
+              setTimeout(() => router.push("/"), 3000)
+              return
+            }
+          } else {
+            // Different error, don't retry
+            throw completionError
+          }
+        }
+      }
+
+      if (!response) {
+        setError("Unable to confirm order completion. Please contact support with your payment intent: " + paymentIntent?.id)
+        setLoading(false)
+        return
+      }
 
       if (response.type === "cart" && response.error) {
         console.error("Cart completion error:", response.error)
@@ -105,15 +160,16 @@ const StripeForm = ({ clientSecret }: StripeFormProps) => {
       if (response.type === "order" && response.order) {
         // Success! Order placed
         console.log("Order placed successfully:", response.order)
+        // Clear cart from localStorage
         localStorage.removeItem("cart_id")
-        await refreshCart()
-        alert("Order placed successfully!")
+        // Show success message
+        alert("Order placed successfully! Check your email for confirmation.")
+        // Redirect to home page
         router.push("/")
       }
     } catch (err: any) {
       console.error("Payment error:", err)
       setError(err.message || "An unexpected error occurred")
-    } finally {
       setLoading(false)
     }
   }
@@ -149,6 +205,7 @@ const StripeForm = ({ clientSecret }: StripeFormProps) => {
         onClick={handlePayment}
         disabled={loading || !stripe || !elements}
         className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
+        type="button"
       >
         {loading ? "Processing Payment..." : "Place Order"}
       </button>

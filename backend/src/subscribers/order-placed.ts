@@ -2,20 +2,62 @@ import {
   type SubscriberConfig,
   type SubscriberArgs,
 } from "@medusajs/framework"
+import sgMail from "@sendgrid/mail"
 
 export default async function orderPlacedHandler({
   event: { data },
   container,
 }: SubscriberArgs<{ id: string }>) {
-  const notificationModuleService = container.resolve("notification")
-  const orderModuleService = container.resolve("order")
+  const query = container.resolve("query")
   const logger = container.resolve("logger")
 
+  logger.info(`Order placed handler triggered for order ${data.id}`)
+
+  // Initialize SendGrid
+  logger.info("Checking SendGrid configuration...")
+  const apiKey = process.env.SENDGRID_API_KEY
+  const fromEmail = process.env.SENDGRID_FROM_EMAIL
+
+  logger.info(`API Key exists: ${!!apiKey}, From email: ${fromEmail}`)
+
+  if (!apiKey || !fromEmail) {
+    logger.error("SendGrid API key or from email not configured")
+    return
+  }
+
   try {
-    // Retrieve the full order details
-    const order = await orderModuleService.retrieveOrder(data.id, {
-      relations: ["items", "items.variant", "items.product", "shipping_address", "billing_address"],
+    logger.info("Setting SendGrid API key...")
+    sgMail.setApiKey(apiKey)
+    logger.info("SendGrid API key set successfully")
+  } catch (initError) {
+    logger.error(`SendGrid initialization error: ${initError}`)
+    return
+  }
+
+  try {
+    // Retrieve the full order details using Query
+    // Note: In Medusa v2, order totals are calculated dynamically and must be explicitly requested
+    const { data: orders } = await query.graph({
+      entity: "order",
+      fields: [
+        "id",
+        "display_id",
+        "email",
+        "total",
+        "subtotal",
+        "tax_total",
+        "shipping_total",
+        "discount_total",
+        "items.*",
+        "shipping_address.*",
+        "billing_address.*"
+      ],
+      filters: {
+        id: data.id,
+      },
     })
+
+    const order = orders[0]
 
     if (!order || !order.email || !order.items) {
       logger.warn("No order or email found for order notification")
@@ -25,15 +67,16 @@ export default async function orderPlacedHandler({
     // Format order items for email
     const itemsList = order.items
       .map((item: any) => {
-        const price = item.unit_price / 100 // Convert from cents
-        const total = (item.unit_price * item.quantity) / 100
+        const price = Number(item.unit_price || 0)
+        const quantity = Number(item.quantity || 0)
+        const total = price * quantity
         return `
         <tr>
           <td style="padding: 10px; border-bottom: 1px solid #eee;">
             ${item.product_title || item.title}
             ${item.variant_title ? `<br><small style="color: #666;">${item.variant_title}</small>` : ''}
           </td>
-          <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: center;">${item.quantity}</td>
+          <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: center;">${quantity}</td>
           <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">$${price.toFixed(2)}</td>
           <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right; font-weight: bold;">$${total.toFixed(2)}</td>
         </tr>
@@ -41,10 +84,10 @@ export default async function orderPlacedHandler({
       })
       .join("")
 
-    const subtotal = Number(order.subtotal || 0) / 100
-    const shipping = Number(order.shipping_total || 0) / 100
-    const tax = Number(order.tax_total || 0) / 100
-    const total = Number(order.total || 0) / 100
+    const subtotal = Number(order.subtotal || 0)
+    const shipping = Number(order.shipping_total || 0)
+    const tax = Number(order.tax_total || 0)
+    const total = Number(order.total || 0)
 
     const shippingAddress = order.shipping_address
     const shippingAddressHtml = shippingAddress ? `
@@ -136,20 +179,27 @@ export default async function orderPlacedHandler({
 </html>
     `
 
-    // Send email notification using SendGrid
-    await notificationModuleService.createNotifications({
+    // Send email notification using SendGrid directly
+    const msg = {
       to: order.email,
-      channel: "email",
-      template: "order-placed",
-      data: {
-        subject: `Order Confirmation - #${order.display_id}`,
-        html: emailHtml,
-      },
-    })
+      from: fromEmail,
+      subject: `Order Confirmation - #${order.display_id}`,
+      html: emailHtml,
+    }
 
-    logger.info(`Order confirmation email sent to ${order.email} for order #${order.display_id}`)
-  } catch (error) {
+    logger.info(`Attempting to send email to: ${order.email}`)
+    logger.info(`Email message prepared: ${JSON.stringify({ to: msg.to, from: msg.from, subject: msg.subject })}`)
+
+    await sgMail.send(msg)
+    logger.info(`Order confirmation email sent successfully to ${order.email} for order #${order.display_id}`)
+  } catch (error: any) {
     logger.error(`Failed to send order confirmation email: ${error}`)
+    logger.error(`Error message: ${error.message}`)
+    logger.error(`Error stack: ${error.stack}`)
+    if (error.response) {
+      logger.error(`SendGrid response body: ${JSON.stringify(error.response.body, null, 2)}`)
+      logger.error(`SendGrid response status: ${error.response.statusCode}`)
+    }
   }
 }
 

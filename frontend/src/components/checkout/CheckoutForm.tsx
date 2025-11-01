@@ -3,11 +3,13 @@ import { useRouter } from 'next/router'
 import { useCart } from '@/lib/context/cart-context'
 import { medusaClient } from '@/lib/config/medusa-client'
 import { formatPrice } from '@/lib/utils/format'
+import StripePayment from './StripePayment'
 
 export default function CheckoutForm() {
   const router = useRouter()
-  const { cart } = useCart()
+  const { cart, refreshCart } = useCart()
   const [isProcessing, setIsProcessing] = useState(false)
+  const [step, setStep] = useState<'shipping' | 'payment'>('shipping')
   
   const [formData, setFormData] = useState({
     email: '',
@@ -26,7 +28,7 @@ export default function CheckoutForm() {
     }))
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleShippingSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!cart) return
 
@@ -50,18 +52,19 @@ export default function CheckoutForm() {
         },
       })
 
-      // Complete the cart to create the order
-      const response = await medusaClient.store.cart.complete(cart.id)
+      // Initialize payment session with Stripe
+      await medusaClient.store.payment.initiatePaymentSession(cart, {
+        provider_id: "pp_stripe_stripe",
+      })
 
-      console.log('Order created:', response)
+      // Refresh cart to get payment session data
+      await refreshCart()
 
-      // Clear cart and redirect
-      localStorage.removeItem('cart_id')
-      alert('Order placed successfully!')
-      router.push('/')
+      // Move to payment step
+      setStep('payment')
     } catch (error) {
       console.error('Checkout error:', error)
-      alert('Failed to complete order. Please try again.')
+      alert('Failed to proceed to payment. Please try again.')
     } finally {
       setIsProcessing(false)
     }
@@ -88,9 +91,10 @@ export default function CheckoutForm() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Checkout Form */}
         <div className="lg:col-span-2">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="card">
-              <h2 className="text-xl font-bold text-neutral-900 mb-4">Contact Information</h2>
+          {step === 'shipping' ? (
+            <form onSubmit={handleShippingSubmit} className="space-y-6">
+              <div className="card">
+                <h2 className="text-xl font-bold text-neutral-900 mb-4">Contact Information</h2>
               <div>
                 <label className="block text-sm font-medium text-neutral-900 mb-2">
                   Email
@@ -184,14 +188,30 @@ export default function CheckoutForm() {
               </div>
             </div>
 
-            <button
-              type="submit"
-              disabled={isProcessing}
-              className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isProcessing ? 'Processing...' : 'Place Order'}
-            </button>
-          </form>
+              <button
+                type="submit"
+                disabled={isProcessing}
+                className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isProcessing ? 'Processing...' : 'Continue to Payment'}
+              </button>
+            </form>
+          ) : (
+            <div className="space-y-6">
+              <div className="card">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-bold text-neutral-900">Payment</h2>
+                  <button
+                    onClick={() => setStep('shipping')}
+                    className="text-sm text-blue-600 hover:text-blue-700"
+                  >
+                    ← Edit Shipping
+                  </button>
+                </div>
+                <StripePayment />
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Order Summary */}

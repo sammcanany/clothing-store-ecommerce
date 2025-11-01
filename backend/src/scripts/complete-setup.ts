@@ -138,12 +138,12 @@ export default async function ({ container }: any) {
     logger.info("5. Creating products with variants and prices...")
     
     const productsData = [
-      { title: "Classic White T-Shirt", description: "A timeless essential for any wardrobe. Made from 100% organic cotton.", thumbnail: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400", price: 2999 },
-      { title: "Slim Fit Jeans", description: "Comfortable and stylish denim jeans perfect for everyday wear.", thumbnail: "https://images.unsplash.com/photo-1542272604-787c3835535d?w=400", price: 5999 },
-      { title: "Leather Jacket", description: "Premium leather jacket with modern design and superior comfort.", thumbnail: "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=400", price: 19999 },
-      { title: "Running Shoes", description: "High-performance running shoes with excellent cushioning and support.", thumbnail: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400", price: 8999 },
-      { title: "Cotton Hoodie", description: "Cozy and comfortable hoodie perfect for casual outings.", thumbnail: "https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=400", price: 4999 },
-      { title: "Denim Jacket", description: "Classic denim jacket that never goes out of style.", thumbnail: "https://images.unsplash.com/photo-1576995853123-5a10305d93c0?w=400", price: 7999 }
+      { title: "Classic White T-Shirt", description: "A timeless essential for any wardrobe. Made from 100% organic cotton.", thumbnail: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400", price: 29.99 },
+      { title: "Slim Fit Jeans", description: "Comfortable and stylish denim jeans perfect for everyday wear.", thumbnail: "https://images.unsplash.com/photo-1542272604-787c3835535d?w=400", price: 59.99 },
+      { title: "Leather Jacket", description: "Premium leather jacket with modern design and superior comfort.", thumbnail: "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=400", price: 199.99 },
+      { title: "Running Shoes", description: "High-performance running shoes with excellent cushioning and support.", thumbnail: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400", price: 89.99 },
+      { title: "Cotton Hoodie", description: "Cozy and comfortable hoodie perfect for casual outings.", thumbnail: "https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=400", price: 49.99 },
+      { title: "Denim Jacket", description: "Classic denim jacket that never goes out of style.", thumbnail: "https://images.unsplash.com/photo-1576995853123-5a10305d93c0?w=400", price: 79.99 }
     ]
 
     const existingProducts = await productModule.listProducts({})
@@ -188,7 +188,7 @@ export default async function ({ container }: any) {
           [Modules.SALES_CHANNEL]: { sales_channel_id: defaultSalesChannel.id },
         })
 
-        logger.info(`   ✓ Created: ${productData.title} ($${(productData.price / 100).toFixed(2)})`)
+        logger.info(`   ✓ Created: ${productData.title} ($${productData.price.toFixed(2)})`)
       }
     } else {
       logger.info(`   ✓ ${existingProducts.length} products already exist`)

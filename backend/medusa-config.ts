@@ -38,10 +38,11 @@ module.exports = defineConfig({
       options: {
         providers: [
           {
-            resolve: "@medusajs/notification-sendgrid",
+            resolve: "@medusajs/medusa/notification-sendgrid",
             id: "sendgrid",
             options: {
-              apiKey: process.env.SENDGRID_API_KEY,
+              channels: ["email"],
+              api_key: process.env.SENDGRID_API_KEY,
               from: process.env.SENDGRID_FROM_EMAIL,
             },
           },

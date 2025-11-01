@@ -6,6 +6,7 @@ interface CartContextType {
   addToCart: (variantId: string, quantity: number) => Promise<void>
   updateQuantity: (lineId: string, quantity: number) => Promise<void>
   removeFromCart: (lineId: string) => Promise<void>
+  refreshCart: () => Promise<void>
   cartCount: number
 }
 
@@ -17,14 +18,15 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const initCart = async () => {
       const cartId = localStorage.getItem('cart_id')
-      
+
       if (cartId) {
         try {
-          const response = await sdk.store.cart.retrieve(cartId, {
-            fields: 'id,region,currency_code,items.id,items.quantity,items.subtotal,items.total,items.variant.id,items.variant.prices.amount,items.variant.prices.currency_code'
-          })
+          console.log('Retrieving cart:', cartId)
+          const response = await sdk.store.cart.retrieve(cartId)
+          console.log('Cart retrieved:', response.cart)
           setCart(response.cart)
         } catch (error) {
+          console.error('Error retrieving cart:', error)
           localStorage.removeItem('cart_id')
           createNewCart()
         }
@@ -38,7 +40,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Get the first available region
         const regionsResponse = await sdk.store.region.list()
         const regionId = regionsResponse.regions?.[0]?.id
-        
+
         if (!regionId) {
           console.error('No regions available')
           return
@@ -46,8 +48,6 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         const response = await sdk.store.cart.create({
           region_id: regionId
-        }, {
-          fields: 'id,region,currency_code,items.id,items.quantity,items.subtotal,items.total,items.variant.id,items.variant.prices.amount,items.variant.prices.currency_code'
         })
         localStorage.setItem('cart_id', response.cart.id)
         setCart(response.cart)
@@ -82,13 +82,27 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!cart) return
 
     const response = await sdk.store.cart.deleteLineItem(cart.id, lineId)
-    setCart(response)
+    setCart(response.cart)
+  }
+
+  const refreshCart = async () => {
+    const cartId = localStorage.getItem('cart_id')
+    if (cartId) {
+      try {
+        const response = await sdk.store.cart.retrieve(cartId)
+        setCart(response.cart)
+      } catch (error) {
+        console.error('Error refreshing cart:', error)
+        localStorage.removeItem('cart_id')
+        setCart(null)
+      }
+    }
   }
 
   const cartCount = cart?.items?.reduce((acc: number, item: any) => acc + item.quantity, 0) || 0
 
   return (
-    <CartContext.Provider value={{ cart, addToCart, updateQuantity, removeFromCart, cartCount }}>
+    <CartContext.Provider value={{ cart, addToCart, updateQuantity, removeFromCart, refreshCart, cartCount }}>
       {children}
     </CartContext.Provider>
   )
