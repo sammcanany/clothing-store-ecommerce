@@ -67,12 +67,10 @@ You need to get the store files onto your computer. There are two ways to do thi
    - Go to the GitHub page
    - Click the green "Code" button
    - Click "Download ZIP"
-   - Find the ZIP file in your Downloads folder
-   - Double-click to unzip it
-   - Move the unzipped folder to an easy location like:
-     - Mac: `/Users/YourName/Desktop/Jack's E-Commerce Site`
-     - Windows: `C:\Users\YourName\Desktop\Jack's E-Commerce Site`
-     - Linux: `/home/YourName/Desktop/Jack's E-Commerce Site`
+   - Find the ZIP file in your Downloads folder (will be named something like `clothing-store-ecommerce-main.zip`)
+   - Double-click to unzip it (creates a folder like `clothing-store-ecommerce-main`)
+   - You can rename it to something simpler if you want (e.g., "my-store")
+   - Move the unzipped folder to an easy location like your Desktop
 
 2. If you received this as a folder:
    - Move it to an easy location (like your Desktop)
@@ -119,32 +117,32 @@ In the terminal, you need to "go to" the folder where you put the store files. W
 
 **Mac:**
 ```bash
-cd ~/Desktop/Jack\'s\ E-Commerce\ Site
+cd ~/Desktop/clothing-store-ecommerce-main
 ```
-Or if you put it somewhere else, replace the path:
+Or if you renamed/moved it:
 ```bash
-cd "/Users/YourName/Desktop/Jack's E-Commerce Site"
+cd "/Users/YourName/Desktop/your-folder-name"
 ```
 
 **Windows:**
 ```powershell
-cd "C:\Users\YourName\Desktop\Jack's E-Commerce Site"
+cd "C:\Users\YourName\Desktop\clothing-store-ecommerce-main"
 ```
-Replace `YourName` with your actual Windows username.
+Replace `YourName` with your actual Windows username, and adjust the folder name if you renamed it.
 
 **Linux:**
 ```bash
-cd ~/Desktop/Jack\'s\ E-Commerce\ Site
+cd ~/Desktop/clothing-store-ecommerce-main
 ```
 Or:
 ```bash
-cd "/home/YourName/Desktop/Jack's E-Commerce Site"
+cd "/home/YourName/Desktop/clothing-store-ecommerce-main"
 ```
 
 **How to know it worked:**
 - The terminal should now show your folder path
-- Mac/Linux: You'll see something like `~/Desktop/Jack's E-Commerce Site`
-- Windows: You'll see something like `C:\Users\...\Jack's E-Commerce Site>`
+- Mac/Linux: You'll see something like `~/Desktop/clothing-store-ecommerce-main`
+- Windows: You'll see something like `C:\Users\...\clothing-store-ecommerce-main>`
 
 **Tip:** If you get "No such file or directory" or "cannot find path", the path is wrong. Try dragging the folder into the terminal window to auto-complete the path!
 
