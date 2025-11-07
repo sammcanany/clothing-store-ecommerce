@@ -19,8 +19,9 @@ export default function CartView() {
     )
   }
 
-  const subtotal = cart.subtotal || 0
-  const total = cart.total || 0
+  // Use item_subtotal (just the products) instead of subtotal (which includes shipping)
+  const subtotal = cart.item_subtotal || 0
+  const total = cart.item_total || 0
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -32,7 +33,7 @@ export default function CartView() {
           <div className="space-y-4">
             {cart.items.map((item: any) => (
               <div key={item.id} className="card flex gap-4">
-                <div className="w-24 h-24 bg-neutral-100 rounded-md overflow-hidden flex-shrink-0">
+                <Link href={`/products/${item.product_id}`} className="w-24 h-24 bg-neutral-100 rounded-md overflow-hidden flex-shrink-0 hover:opacity-75 transition-opacity">
                   {item.thumbnail ? (
                     <img
                       src={item.thumbnail}
@@ -44,10 +45,12 @@ export default function CartView() {
                       No Image
                     </div>
                   )}
-                </div>
+                </Link>
 
                 <div className="flex-grow">
-                  <h3 className="font-semibold text-neutral-900">{item.title}</h3>
+                  <Link href={`/products/${item.product_id}`} className="hover:text-blue-600 transition-colors">
+                    <h3 className="font-semibold text-neutral-900">{item.title}</h3>
+                  </Link>
                   <p className="text-sm text-neutral-600">{item.variant?.title}</p>
                   <p className="text-neutral-900 font-medium mt-2">
                     {formatPrice(item.unit_price, cart.region?.currency_code)}

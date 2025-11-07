@@ -10,7 +10,21 @@ const stripePromise = loadStripe(
   process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || ""
 )
 
-export default function StripePayment() {
+interface BillingAddress {
+  firstName: string
+  lastName: string
+  address: string
+  city: string
+  state: string
+  postalCode: string
+  country: string
+}
+
+interface StripePaymentProps {
+  billingAddress: BillingAddress
+}
+
+export default function StripePayment({ billingAddress }: StripePaymentProps) {
   const { cart } = useCart()
   const clientSecret = cart?.payment_collection?.payment_sessions?.[0]?.data
     ?.client_secret as string
@@ -26,16 +40,17 @@ export default function StripePayment() {
         clientSecret,
       }}
     >
-      <StripeForm clientSecret={clientSecret} />
+      <StripeForm clientSecret={clientSecret} billingAddress={billingAddress} />
     </Elements>
   )
 }
 
 interface StripeFormProps {
   clientSecret: string
+  billingAddress: BillingAddress
 }
 
-const StripeForm = ({ clientSecret }: StripeFormProps) => {
+const StripeForm = ({ clientSecret, billingAddress }: StripeFormProps) => {
   const { cart, clearCart } = useCart()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -80,15 +95,14 @@ const StripeForm = ({ clientSecret }: StripeFormProps) => {
           payment_method: {
             card,
             billing_details: {
-              name: `${cart.shipping_address?.first_name} ${cart.shipping_address?.last_name}`,
+              name: `${billingAddress.firstName} ${billingAddress.lastName}`,
               email: cart.email,
-              phone: cart.shipping_address?.phone,
               address: {
-                city: cart.shipping_address?.city,
-                country: cart.shipping_address?.country_code,
-                line1: cart.shipping_address?.address_1,
-                line2: cart.shipping_address?.address_2,
-                postal_code: cart.shipping_address?.postal_code,
+                city: billingAddress.city,
+                country: billingAddress.country,
+                line1: billingAddress.address,
+                postal_code: billingAddress.postalCode,
+                state: billingAddress.state,
               },
             },
           },

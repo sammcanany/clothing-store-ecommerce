@@ -18,7 +18,16 @@ module.exports = defineConfig({
       sslmode: "disable",
     },
   },
+  admin: {
+    backendUrl: process.env.MEDUSA_BACKEND_URL || "http://localhost:9000",
+  },
   modules: [
+    {
+      resolve: "@medusajs/medusa/event-bus-redis",
+      options: {
+        redisUrl: process.env.REDIS_URL,
+      },
+    },
     {
       resolve: "@medusajs/medusa/payment",
       options: {
@@ -44,6 +53,24 @@ module.exports = defineConfig({
               channels: ["email"],
               api_key: process.env.SENDGRID_API_KEY,
               from: process.env.SENDGRID_FROM_EMAIL,
+            },
+          },
+        ],
+      },
+    },
+    {
+      resolve: "@medusajs/medusa/fulfillment",
+      options: {
+        providers: [
+          {
+            resolve: "./src/modules/usps-fulfillment",
+            id: "usps",
+            options: {
+              clientId: process.env.USPS_CLIENT_ID,
+              clientSecret: process.env.USPS_CLIENT_SECRET,
+              environment: process.env.USPS_ENVIRONMENT || "testing",
+              originZIPCode: process.env.WAREHOUSE_ZIP || "66217",
+              defaultMailClass: "PRIORITY_MAIL",
             },
           },
         ],

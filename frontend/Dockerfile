@@ -5,8 +5,9 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies from lockfile (deterministic)
-RUN npm ci --legacy-peer-deps
+# Install dependencies
+# Generate package-lock.json if it doesn't exist
+RUN npm install --legacy-peer-deps
 
 # Copy application files
 COPY . .

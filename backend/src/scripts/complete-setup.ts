@@ -16,16 +16,76 @@ export default async function ({ container }: any) {
     const productModule = container.resolve(Modules.PRODUCT)
     const pricingModule = container.resolve(Modules.PRICING)
     const userModule = container.resolve(Modules.USER)
+    const fulfillmentModule = container.resolve(Modules.FULFILLMENT)
+    const storeModule = container.resolve(Modules.STORE)
+
+    // -1. Store Setup (currencies)
+    logger.info("-1. Setting up store with currencies...")
+    const stores = await storeModule.listStores()
+    let store = stores[0]
+    
+    if (!store) {
+      // Create store if it doesn't exist
+      store = await storeModule.createStores({
+        name: "Main Store",
+        supported_currencies: [
+          {
+            currency_code: "usd",
+            is_default: true
+          }
+        ]
+      })
+      logger.info("   ✓ Created store with USD currency")
+    } else {
+      // Check if USD is already configured
+      const hasUSD = store.supported_currencies?.some((c: any) => c.currency_code === 'usd')
+      
+      if (!hasUSD) {
+        // Update store to add USD
+        store = await storeModule.updateStores(store.id, {
+          supported_currencies: [
+            ...(store.supported_currencies || []),
+            {
+              currency_code: "usd",
+              is_default: true
+            }
+          ]
+        })
+        logger.info("   ✓ Added USD currency to store")
+      } else {
+        logger.info("   ✓ Store already has USD currency")
+      }
+    }
 
     // 0. Admin User
     logger.info("0. Setting up admin user...")
+    const authModule = container.resolve(Modules.AUTH)
     const users = await userModule.listUsers()
+    
     if (users.length === 0) {
-      await userModule.createUsers({
-        email: process.env.ADMIN_EMAIL || 'admin@test.com',
-        password: process.env.ADMIN_PASSWORD || 'supersecret',
+      const adminEmail = process.env.ADMIN_EMAIL || 'admin@test.com'
+      const adminPassword = process.env.ADMIN_PASSWORD || 'supersecret'
+      
+      // Create user first
+      const user = await userModule.createUsers({
+        email: adminEmail,
+        first_name: "Admin",
+        last_name: "User",
       })
-      logger.info("   ✓ Created admin user")
+      
+      // Then create auth identity for that user
+      const { success } = await authModule.register("emailpass", {
+        body: {
+          email: adminEmail,
+          password: adminPassword,
+        }
+      })
+      
+      if (success) {
+        logger.info("   ✓ Created admin user with auth identity")
+      } else {
+        logger.warn("   ⚠ User created but auth identity failed")
+      }
     } else {
       logger.info("   ✓ Admin user exists")
     }
@@ -75,25 +135,259 @@ export default async function ({ container }: any) {
       }
     }
     
-    // 2.1. Ensure default currency preference is USD
-    logger.info("2.1. Setting default currency preference...")
+    // 2.1. Currency preference is set via region, no need for separate update
+    logger.info("2.1. Currency preference set via region (USD)")
+    logger.info("   ✓ Currency is USD")
+
+    // 2.2. Create USPS Shipping Option
+    logger.info("2.2. Setting up USPS shipping option...")
     try {
-      const pricePrefs = await query.graph({
-        entity: "price_preference",
-        fields: ["id", "attribute", "value"],
-        filters: { attribute: "currency_code" }
-      })
+      // First, we need to find or create a stock location
+      const stockLocationModule = container.resolve(Modules.STOCK_LOCATION)
+      let locations = await stockLocationModule.listStockLocations({ name: "Main Warehouse" })
+      let location = locations[0]
       
-      if (pricePrefs.data.length > 0) {
-        // Update existing preference to USD
-        const dbConnection = container.resolve("manager")
-        await dbConnection.query(
-          `UPDATE price_preference SET value = 'usd' WHERE attribute = 'currency_code'`
-        )
-        logger.info("   ✓ Updated currency preference to USD")
+      if (!location) {
+        // Get warehouse address from environment
+        const warehouseAddress = process.env.WAREHOUSE_ADDRESS || "123 Main St"
+        const warehouseCity = process.env.WAREHOUSE_CITY || "Overland Park"
+        const warehouseState = process.env.WAREHOUSE_STATE || "KS"
+        const warehouseZip = process.env.WAREHOUSE_ZIP || "66217"
+        const warehouseCountry = process.env.WAREHOUSE_COUNTRY || "US"
+        
+        location = await stockLocationModule.createStockLocations({
+          name: "Main Warehouse",
+          address: {
+            address_1: warehouseAddress,
+            city: warehouseCity,
+            province: warehouseState,
+            postal_code: warehouseZip,
+            country_code: warehouseCountry.toLowerCase()
+          }
+        })
+        logger.info(`   ✓ Created stock location (${warehouseCity}, ${warehouseState} ${warehouseZip})`)
+      } else {
+        logger.info("   ✓ Stock location exists")
+      }
+
+      // Link sales channel to stock location (required for fulfillment set discovery)
+      const remoteLink = container.resolve("remoteLink")
+      try {
+        await remoteLink.create({
+          [Modules.SALES_CHANNEL]: {
+            sales_channel_id: defaultSalesChannel.id
+          },
+          [Modules.STOCK_LOCATION]: {
+            stock_location_id: location.id
+          }
+        })
+        logger.info("   ✓ Linked sales channel to stock location")
+      } catch (error) {
+        // Link might already exist
+        logger.info("   ✓ Sales channel already linked to stock location")
+      }
+
+      // Link USPS provider to stock location
+      const providers = await fulfillmentModule.listFulfillmentProviders()
+      const uspsProvider = providers.find((p: any) => p.id.includes('usps'))
+      
+      if (uspsProvider && location) {
+        try {
+          await remoteLink.create({
+            [Modules.STOCK_LOCATION]: {
+              stock_location_id: location.id,
+            },
+            [Modules.FULFILLMENT]: {
+              fulfillment_provider_id: uspsProvider.id,
+            },
+          })
+          logger.info("   ✓ Linked USPS provider to stock location")
+        } catch (error: any) {
+          // Link might already exist
+          if (error.message?.includes('already exists') || error.message?.includes('duplicate')) {
+            logger.info("   ✓ USPS provider already linked to stock location")
+          } else {
+            logger.warn(`   ⚠ Could not link USPS provider: ${error.message}`)
+          }
+        }
+      }
+
+      // Create shipping option type if it doesn't exist
+      const existingTypes = await fulfillmentModule.listShippingOptionTypes()
+      let shippingOptionType = existingTypes.find((t: any) => t.code === 'standard-shipping')
+      
+      if (!shippingOptionType) {
+        shippingOptionType = await fulfillmentModule.createShippingOptionTypes({
+          label: "Standard Shipping",
+          code: "standard-shipping",
+          description: "Standard shipping options for orders"
+        })
+        logger.info("   ✓ Created shipping option type")
+      } else {
+        logger.info("   ✓ Shipping option type exists")
+      }
+
+      // Get or create fulfillment set for the location
+      const fulfillmentSets = await fulfillmentModule.listFulfillmentSets()
+      let fulfillmentSet = fulfillmentSets[0]
+      
+      if (!fulfillmentSet) {
+        fulfillmentSet = await fulfillmentModule.createFulfillmentSets({
+          name: "Default Fulfillment Set",
+          type: "shipping"
+        })
+        logger.info("   ✓ Created fulfillment set")
+        
+        // Link fulfillment set to stock location
+        if (location) {
+          try {
+            await remoteLink.create({
+              [Modules.STOCK_LOCATION]: {
+                stock_location_id: location.id,
+              },
+              [Modules.FULFILLMENT]: {
+                fulfillment_set_id: fulfillmentSet.id,
+              },
+            })
+            logger.info("   ✓ Linked fulfillment set to stock location")
+          } catch (error: any) {
+            if (error.message?.includes('already exists') || error.message?.includes('duplicate')) {
+              logger.info("   ✓ Fulfillment set already linked")
+            } else {
+              logger.warn(`   ⚠ Could not link fulfillment set: ${error.message}`)
+            }
+          }
+        }
+      } else {
+        logger.info("   ✓ Fulfillment set exists")
+        
+        // Ensure fulfillment set is linked to stock location
+        if (location) {
+          try {
+            await remoteLink.create({
+              [Modules.STOCK_LOCATION]: {
+                stock_location_id: location.id,
+              },
+              [Modules.FULFILLMENT]: {
+                fulfillment_set_id: fulfillmentSet.id,
+              },
+            })
+            logger.info("   ✓ Linked fulfillment set to stock location")
+          } catch (error: any) {
+            if (error.message?.includes('already exists') || error.message?.includes('duplicate')) {
+              logger.info("   ✓ Fulfillment set already linked to stock location")
+            } else {
+              logger.warn(`   ⚠ Could not link fulfillment set: ${error.message}`)
+            }
+          }
+        }
+      }
+
+      // Create service zone if it doesn't exist
+      const serviceZones = await fulfillmentModule.listServiceZones()
+      let serviceZone = serviceZones.find((sz: any) => sz.name === 'United States')
+      
+      if (!serviceZone) {
+        serviceZone = await fulfillmentModule.createServiceZones({
+          name: "United States",
+          fulfillment_set_id: fulfillmentSet.id,
+          geo_zones: [{
+            type: "country",
+            country_code: "us"
+          }]
+        })
+        logger.info("   ✓ Created service zone (United States)")
+      } else {
+        logger.info("   ✓ Service zone exists")
+      }
+
+      // Link service zone to region
+      try {
+        await remoteLink.create({
+          [Modules.FULFILLMENT]: {
+            service_zone_id: serviceZone.id,
+          },
+          [Modules.REGION]: {
+            region_id: defaultRegion.id,
+          },
+        })
+        logger.info("   ✓ Linked service zone to region")
+      } catch (error: any) {
+        if (error.message?.includes('already exists')) {
+          logger.info("   ✓ Service zone already linked to region")
+        } else {
+          logger.warn(`   ⚠ Could not link service zone to region: ${error.message}`)
+        }
+      }
+
+      // Define all USPS shipping methods
+      const shippingMethods = [
+        {
+          name: "USPS Ground Advantage",
+          mailClass: "USPS_GROUND_ADVANTAGE",
+          description: "Affordable ground shipping (2-5 business days)"
+        },
+        {
+          name: "USPS Priority Mail",
+          mailClass: "PRIORITY_MAIL",
+          description: "Fast delivery (1-3 business days)"
+        },
+        {
+          name: "USPS Priority Mail Express",
+          mailClass: "PRIORITY_MAIL_EXPRESS",
+          description: "Overnight delivery to most locations"
+        }
+        // Note: First Class Package not included - USPS often doesn't offer it for packages
+        // with these dimensions (1x1x1) even though weight (0.5 lbs) qualifies
+      ]
+
+      // USPS provider was already fetched earlier, reuse it
+      
+      if (uspsProvider) {
+        // Get default shipping profile
+        const profiles = await fulfillmentModule.listShippingProfiles()
+        const defaultProfile = profiles[0]
+        
+        if (defaultProfile && shippingOptionType) {
+          // Create or update each shipping method
+          for (const method of shippingMethods) {
+            const existingOptions = await fulfillmentModule.listShippingOptions({
+              name: method.name
+            })
+            
+            if (existingOptions.length === 0) {
+              await fulfillmentModule.createShippingOptions({
+                name: method.name,
+                service_zone_id: serviceZone.id,
+                shipping_profile_id: defaultProfile.id,
+                provider_id: uspsProvider.id,
+                price_type: "calculated",
+                shipping_option_type_id: shippingOptionType.id,
+                data: {
+                  mailClass: method.mailClass,
+                  description: method.description
+                },
+                rules: [
+                  {
+                    attribute: "enabled_in_store",
+                    operator: "eq",
+                    value: "true"
+                  }
+                ]
+              })
+              logger.info(`   ✓ Created ${method.name}`)
+            } else {
+              logger.info(`   ✓ ${method.name} exists`)
+            }
+          }
+        } else {
+          logger.warn("   ⚠ No shipping profile or option type found")
+        }
+      } else {
+        logger.warn("   ⚠ USPS provider not found - make sure USPS fulfillment module is installed")
       }
     } catch (error: any) {
-      logger.warn(`   ⚠ Could not update currency preference: ${error.message}`)
+      logger.warn(`   ⚠ Could not create shipping option: ${error.message}`)
     }
 
     // 3. API Key
@@ -146,6 +440,10 @@ export default async function ({ container }: any) {
       { title: "Denim Jacket", description: "Classic denim jacket that never goes out of style.", thumbnail: "https://images.unsplash.com/photo-1576995853123-5a10305d93c0?w=400", price: 79.99 }
     ]
 
+    // Get default shipping profile (needed to link products for shipping)
+    const shippingProfiles = await fulfillmentModule.listShippingProfiles()
+    const defaultShippingProfile = shippingProfiles.find((p: any) => p.name === "Default") || shippingProfiles[0]
+    
     const existingProducts = await productModule.listProducts({})
     
     if (existingProducts.length === 0) {
@@ -187,11 +485,36 @@ export default async function ({ container }: any) {
           [Modules.PRODUCT]: { product_id: product.id },
           [Modules.SALES_CHANNEL]: { sales_channel_id: defaultSalesChannel.id },
         })
+        
+        // Link product to shipping profile (makes variants require shipping)
+        if (defaultShippingProfile) {
+          await remoteLink.create({
+            [Modules.PRODUCT]: { product_id: product.id },
+            [Modules.FULFILLMENT]: { shipping_profile_id: defaultShippingProfile.id },
+          })
+        }
 
         logger.info(`   ✓ Created: ${productData.title} ($${productData.price.toFixed(2)})`)
       }
     } else {
       logger.info(`   ✓ ${existingProducts.length} products already exist`)
+      
+      // Link existing products to shipping profile if not already linked
+      if (defaultShippingProfile) {
+        for (const product of existingProducts) {
+          try {
+            await remoteLink.create({
+              [Modules.PRODUCT]: { product_id: product.id },
+              [Modules.FULFILLMENT]: { shipping_profile_id: defaultShippingProfile.id },
+            })
+            logger.info(`   ✓ Linked ${product.title} to shipping profile`)
+          } catch (error: any) {
+            if (!error.message?.includes('already exists')) {
+              logger.warn(`   ⚠ Could not link ${product.title}: ${error.message}`)
+            }
+          }
+        }
+      }
     }
 
     // 6. Create Collections and assign products

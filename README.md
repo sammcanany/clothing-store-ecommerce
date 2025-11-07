@@ -36,16 +36,40 @@ docker compose version
 
 ## Quick Start (6 Steps)
 
-### 1. Configure Environment
+### 1. Configure Environment (REQUIRED)
 
-For custom ports, domains, or credentials, copy and edit the environment file:
+**⚠️ IMPORTANT: Do this BEFORE starting Docker containers!**
+
+Copy the environment template and configure your settings:
 
 ```bash
 cp .env.example .env
-# Edit .env with your values
 ```
 
-If you skip this step, default values will be used (localhost, port 9000/3000, etc.)
+**Edit the `.env` file and set these REQUIRED variables:**
+
+```bash
+# REQUIRED: Your warehouse/shipping location
+WAREHOUSE_ADDRESS=123 Main St
+WAREHOUSE_CITY=Overland Park
+WAREHOUSE_STATE=KS
+WAREHOUSE_ZIP=66217
+WAREHOUSE_COUNTRY=US
+
+# REQUIRED for USPS shipping (if using USPS integration)
+USPS_CLIENT_ID=your_usps_client_id_here
+USPS_CLIENT_SECRET=your_usps_client_secret_here
+USPS_ENVIRONMENT=testing
+
+# Optional: Stripe keys for payment processing
+STRIPE_API_KEY=sk_test_...
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
+```
+
+**Why this is required:**
+- The setup script creates a stock location using your warehouse address
+- USPS shipping rates are calculated from this origin location
+- If you skip this, default values (Overland Park, KS) will be used
 
 ### 2. Start Docker Containers
 
@@ -330,6 +354,149 @@ SendGrid will automatically send emails for:
 - Admin notifications
 
 **Note**: SendGrid offers 100 free emails per day, then $15+/month for higher volumes.
+
+## Shipping Setup (USPS)
+
+The store includes a USPS fulfillment provider for real-time shipping rate calculation. This is completely free to use (no third-party fees like ShipStation).
+
+### Overview
+
+The USPS integration provides:
+- ✅ Real-time shipping rate calculations
+- ✅ Multiple mail classes (Priority, Express, Ground Advantage, First-Class)
+- ✅ Calculated pricing based on weight, dimensions, and destination
+- ✅ Free API access (no monthly fees)
+
+### 1. Get USPS API Credentials
+
+1. Go to [USPS Developer Portal](https://developer.usps.com/)
+2. Create an account or sign in
+3. Create a new OAuth2 application
+4. Copy your **Client ID** and **Client Secret**
+
+### 2. Configure USPS
+
+Add your USPS credentials to your environment:
+
+```bash
+# In .env file:
+USPS_CLIENT_ID=your_usps_client_id_here
+USPS_CLIENT_SECRET=your_usps_client_secret_here
+USPS_ENVIRONMENT=testing
+WAREHOUSE_ADDRESS=123 Main St
+WAREHOUSE_CITY=Overland Park
+WAREHOUSE_STATE=KS
+WAREHOUSE_ZIP=66217
+WAREHOUSE_COUNTRY=US
+```
+
+**Important**:
+- Start with `USPS_ENVIRONMENT=testing` for development
+- Change `WAREHOUSE_*` variables to your warehouse/shipping location address
+- Switch to `USPS_ENVIRONMENT=production` when ready to go live
+
+### 3. Install Dependencies & Restart
+
+```bash
+# Rebuild the backend container to install dependencies
+docker compose build backend
+docker compose up -d
+
+# Or install in running container
+docker compose exec backend npm install
+docker compose restart backend
+```
+
+### 4. Configure Shipping Options in Admin
+
+1. Open Admin Panel: http://localhost:9000/app
+2. Go to **Settings → Locations & Shipping**
+3. Click on your location (or create a new one)
+4. In **Fulfillment Providers** section:
+   - Click the three-dots icon → **Edit**
+   - Check the box next to **USPS**
+   - Click **Save**
+5. Create shipping options:
+   - Click **Create option** under the Shipping section
+   - Set **Price Type** to **Calculated**
+   - Enter a **Name** (e.g., "USPS Priority Mail")
+   - Select **Shipping Profile** (usually "Default")
+   - Choose **Fulfillment Provider**: **USPS**
+   - Choose **Fulfillment Option**: Select from available mail classes
+   - Click **Save**
+
+### 5. Available Mail Classes
+
+| Mail Class | Delivery Time | Best For |
+|------------|---------------|----------|
+| Priority Mail | 1-3 days | Standard shipping, most popular |
+| Priority Mail Express | Overnight-2 days | Express shipping, guaranteed |
+| Ground Advantage | 2-5 days | Economy shipping, cost-effective |
+| First-Class Package | 1-5 days | Lightweight items under 1 lb |
+
+### 6. How It Works
+
+1. Customer adds items to cart and enters shipping address
+2. Backend calculates package weight and dimensions
+3. USPS API returns real-time rates for available mail classes
+4. Customer selects preferred shipping method
+5. Order is placed with accurate shipping cost
+
+### Customization
+
+The integration includes default weight and dimension calculations. To customize based on your products:
+
+**Weight Calculation**: Edit `backend/src/modules/usps-fulfillment/service.ts` → `calculateWeight()` method
+
+**Dimensions**: Edit `backend/src/modules/usps-fulfillment/service.ts` → `calculateDimensions()` method
+
+### Testing
+
+1. Use `USPS_ENVIRONMENT=testing` to test against USPS sandbox
+2. Create test orders with various ZIP codes and weights
+3. Verify rates are calculated correctly
+4. Switch to `production` when ready
+
+### Frontend Features
+
+The USPS integration includes three customer-facing features:
+
+#### 1. Address Validation at Checkout
+- Click "Verify Address" during checkout
+- USPS validates and standardizes the address
+- Suggests corrected address with ZIP+4
+- One-click to accept suggested address
+
+#### 2. Shipping Calculator on Product Pages
+- Enter ZIP code on any product page
+- See real-time shipping rates for all mail classes
+- Compare delivery times and costs
+- Helps customers make informed purchase decisions
+
+#### 3. Real-time Rate Calculation at Checkout
+- Automatic rate calculation when shipping address is entered
+- Multiple shipping options displayed with costs
+- Accurate rates based on package weight and destination
+
+### Troubleshooting
+
+**"USPS API Error: Unauthorized"**
+- Check `USPS_CLIENT_ID` and `USPS_CLIENT_SECRET` are correct
+- Verify credentials are active in USPS developer dashboard
+
+**"Shipping address with postal code is required"**
+- Ensure customer enters complete shipping address at checkout
+
+**Rates seem incorrect**
+- Verify `WAREHOUSE_ZIP` is set correctly
+- Check weight calculation logic matches your products
+
+**Address validation not working**
+- Verify USPS API credentials are correct
+- Check that backend API routes are accessible
+- Review browser console for error messages
+
+For more details, see: `backend/src/modules/usps-fulfillment/README.md`
 
 ## Development
 

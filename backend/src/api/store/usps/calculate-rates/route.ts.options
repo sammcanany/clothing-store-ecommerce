@@ -1,0 +1,8 @@
+export async function OPTIONS(req:any, res:any){
+  // Allow CORS preflight from localhost:3000 explicitly
+  const origin = req.headers?.origin || "*"
+  res.setHeader("Access-Control-Allow-Origin", origin)
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS")
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, x-publishable-api-key")
+  res.status(204).end()
+}

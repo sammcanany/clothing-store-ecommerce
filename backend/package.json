@@ -21,7 +21,8 @@
     "@medusajs/notification-sendgrid": "2.11.1",
     "@medusajs/utils": "2.11.1",
     "@medusajs/types": "2.11.1",
-    "@sendgrid/mail": "^8.1.4"
+    "@sendgrid/mail": "^8.1.4",
+    "axios": "^1.7.2"
   },
   "devDependencies": {
     "@medusajs/test-utils": "2.11.1",
@@ -40,7 +41,6 @@
     "vite": "^5.4.21"
   },
   "overrides": {
-    "axios": "1.6.0",
     "esbuild": "0.25.0"
   }
 }

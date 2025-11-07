@@ -2,6 +2,7 @@ import { useState } from 'react'
 import Image from 'next/image'
 import { useCart } from '@/lib/context/cart-context'
 import { formatPrice } from '@/lib/utils/format'
+import ShippingCalculator from '@/components/shipping/ShippingCalculator'
 
 interface ProductDetailProps {
   product: any
@@ -119,10 +120,20 @@ export default function ProductDetail({ product }: ProductDetailProps) {
           <button
             onClick={handleAddToCart}
             disabled={isAdding || !selectedVariant}
-            className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
+            className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed mb-6"
           >
             {isAdding ? 'Adding...' : 'Add to Cart'}
           </button>
+
+          {/* Shipping Calculator */}
+          <ShippingCalculator
+            weight={(selectedVariant?.weight || product.weight || 0.5) * quantity}
+            dimensions={{
+              length: Number(selectedVariant?.length || product.length || 10),
+              width: Number(selectedVariant?.width || product.width || 8),
+              height: Number(selectedVariant?.height || product.height || 2) * quantity
+            }}
+          />
         </div>
       </div>
     </div>

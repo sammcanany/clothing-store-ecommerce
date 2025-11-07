@@ -192,7 +192,82 @@ cd "/home/YourName/Desktop/clothing-store-ecommerce-main"
 
 ---
 
-## Part 5: Start Your Store (6 Easy Steps)
+## Part 5: Configure Your Store (CRITICAL - Do This First!)
+
+**⚠️ STOP! Before starting Docker, you MUST configure your environment variables!**
+
+The setup script needs to know your warehouse location to calculate shipping costs. If you skip this, your store will use default values (Overland Park, KS) which might not be your actual location.
+
+### Step 1: Create Your Configuration File
+
+1. **Find the `.env.example` file** in your store folder:
+   - **Mac/Linux:** You might need to show hidden files:
+     - Mac: Press `Cmd + Shift + .` (period key)
+     - Linux: Press `Ctrl + H`
+   - **Windows:** Make sure "Hidden items" is checked in View tab
+
+2. **Make a copy** of `.env.example`:
+   - Right-click on `.env.example`
+   - Select "Duplicate" (Mac) or "Copy" then "Paste" (Windows/Linux)
+   - Rename the copy to `.env` (just `.env` with no `.example`)
+
+3. **Open `.env`** in a text editor:
+   - Mac: Right-click → Open With → TextEdit
+   - Windows: Right-click → Open With → Notepad
+   - Linux: Right-click → Open With → gedit or Text Editor
+
+### Step 2: Set Your Warehouse Location (REQUIRED)
+
+**Find these lines in the `.env` file and update them with YOUR warehouse address:**
+
+```bash
+# REQUIRED: Your warehouse/shipping location
+WAREHOUSE_ADDRESS=123 Main St
+WAREHOUSE_CITY=Overland Park
+WAREHOUSE_STATE=KS
+WAREHOUSE_ZIP=66217
+WAREHOUSE_COUNTRY=US
+```
+
+**Change to your actual address:**
+```bash
+WAREHOUSE_ADDRESS=456 Oak Avenue
+WAREHOUSE_CITY=Your City
+WAREHOUSE_STATE=NY
+WAREHOUSE_ZIP=10001
+WAREHOUSE_COUNTRY=US
+```
+
+**Why this matters:**
+- USPS shipping rates are calculated from this origin location
+- The setup script creates your stock location using this address
+- If wrong, customers will see incorrect shipping costs
+
+### Step 3: Set USPS Credentials (If Using USPS Shipping)
+
+**Find these lines and add your USPS API credentials:**
+
+```bash
+# REQUIRED for USPS shipping
+USPS_CLIENT_ID=your_usps_client_id_here
+USPS_CLIENT_SECRET=your_usps_client_secret_here
+USPS_ENVIRONMENT=testing
+```
+
+**Don't have USPS credentials yet?**
+1. Go to [https://developer.usps.com](https://developer.usps.com)
+2. Sign up for a free testing account
+3. Create an app to get your Client ID and Secret
+4. Use `USPS_ENVIRONMENT=testing` for testing, `production` when ready to go live
+
+### Step 4: Save the File
+
+- Press `Cmd+S` (Mac) or `Ctrl+S` (Windows/Linux)
+- Close the text editor
+
+---
+
+## Part 6: Start Your Store (Now You're Ready!)
 
 Now we'll run some commands to get your store running. Just copy and paste each command, press Enter, and wait for it to finish before running the next one.
 
@@ -224,7 +299,7 @@ docker compose up -d
 docker exec clothing-store-backend npm run full-setup
 ```
 
-**What this does:** Creates your database, admin account, sample products, and collections
+**What this does:** Creates your database, admin account, sample products, collections, and shipping options using your warehouse address
 
 **Wait time:** 30-60 seconds
 
@@ -237,56 +312,36 @@ docker exec clothing-store-backend npm run full-setup
    NEXT_PUBLIC_MEDUSA_SALES_CHANNEL_ID=sc_01abc456...
 ```
 
-**COPY THESE THREE VALUES!** Write them down or keep the terminal window open. You'll need them in the next step. They will be unique keys generated specifically for your store.
+**COPY THESE THREE VALUES!** Write them down or keep the terminal window open. You'll need them in the next step.
 
-### Step 4: Configure Your Environment Variables
+### Step 4: Add the Generated Keys to Your .env File
 
-Now you need to create a configuration file with those keys you just copied.
+Now you need to add those three keys you just copied to your `.env` file.
 
-**Option A: Using a Text Editor (Easiest)**
-
-1. Open the store folder in your file browser:
-   - Mac: Open Finder, navigate to the folder
-   - Windows: Open File Explorer, navigate to the folder
-   - Linux: Open your file manager
-
-2. Look for a file called `.env.example`
-   - **Mac/Linux:** You might need to show hidden files:
-     - Mac: Press `Cmd + Shift + .` (period key)
-     - Linux: Press `Ctrl + H`
-   - **Windows:** Make sure "Hidden items" is checked in View tab
-
-3. Make a copy of `.env.example`:
-   - Right-click on `.env.example`
-   - Select "Duplicate" (Mac) or "Copy" then "Paste" (Windows/Linux)
-   - Rename the copy to `.env` (just `.env` with no `.example`)
-
-4. Open `.env` in a text editor:
+1. **Open your `.env` file** again:
    - Mac: Right-click → Open With → TextEdit
    - Windows: Right-click → Open With → Notepad
    - Linux: Right-click → Open With → gedit or Text Editor
 
-5. Find these three lines and replace the values with what you copied from Step 3:
+2. **Find these three lines** and replace the values with what you copied from Step 3:
    ```
    NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY=pk_your_actual_key_here
    NEXT_PUBLIC_MEDUSA_REGION_ID=reg_your_actual_id_here
    NEXT_PUBLIC_MEDUSA_SALES_CHANNEL_ID=sc_your_actual_id_here
    ```
 
-6. Save the file (Cmd+S on Mac, Ctrl+S on Windows/Linux)
+3. **Save the file** (Cmd+S on Mac, Ctrl+S on Windows/Linux)
 
-**Option B: Using Terminal (Faster if you're comfortable)**
+**Quick Terminal Method (if you prefer):**
 
 **Mac/Linux:**
 ```bash
-cp .env.example .env
 nano .env
 ```
 Then use arrow keys to navigate, edit the three lines, press `Ctrl+X`, then `Y`, then Enter to save.
 
 **Windows:**
 ```powershell
-copy .env.example .env
 notepad .env
 ```
 Then edit the three lines and save.
@@ -330,9 +385,15 @@ http://localhost:9000/app
 
 **If you see products on the homepage and can click around, congratulations! Your store is working!**
 
+**✅ Verify Shipping is Working:**
+1. Add a product to your cart
+2. Go to checkout and enter a shipping address
+3. You should see USPS shipping options with calculated rates
+4. If no shipping options appear, check that you set the WAREHOUSE_* variables correctly in Step 2
+
 ---
 
-## Part 6: Set Up Payments (Optional but Recommended)
+## Part 7: Set Up Payments (Optional but Recommended)
 
 To actually accept payments, you need to connect Stripe:
 
