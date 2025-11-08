@@ -57,9 +57,21 @@ updates:
       - "frontend"
     open-pull-requests-limit: 5
 
-  # Docker images in docker-compose.yml
+  # Docker base images (postgres, redis, node) in docker-compose.yml and Dockerfiles
+  # Note: Monitors base images only, not the docker-compose.yml syntax itself
   - package-ecosystem: "docker"
-    directory: "/"
+    directory: "/backend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    labels:
+      - "dependencies"
+      - "docker"
+    open-pull-requests-limit: 3
+
+  - package-ecosystem: "docker"
+    directory: "/frontend"
     schedule:
       interval: "weekly"
       day: "monday"
