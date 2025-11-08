@@ -20,6 +20,8 @@ A modern, fully automated e-commerce platform built with Next.js and Medusa 2.11
 - Real-time pricing with tax calculation
 - Product images from Unsplash
 - Mobile-responsive design
+- **Authentication**: Email/password and Google OAuth sign-in
+- **Account Management**: Orders history and profile pages
 
 ## Prerequisites
 
@@ -654,6 +656,52 @@ docker-compose up -d
 # Stop all services
 ## Advanced
 
+### Google Authentication Setup
+
+The platform includes full Google OAuth integration. To enable Google sign-in:
+
+#### 1. Create Google OAuth Credentials
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a new project or select an existing one
+3. Navigate to "APIs & Services" > "Credentials"
+4. Click "Create Credentials" > "OAuth client ID"
+5. Choose "Web application" as the application type
+6. Add authorized redirect URI: `http://localhost:3000/auth/callback`
+7. For production, add your production URL: `https://yourdomain.com/auth/callback`
+8. Save and copy the Client ID and Client Secret
+
+#### 2. Add Environment Variables
+
+Add the following to your backend `.env` file:
+
+```env
+GOOGLE_CLIENT_ID=your_google_client_id_here
+GOOGLE_CLIENT_SECRET=your_google_client_secret_here
+GOOGLE_CALLBACK_URL=http://localhost:3000/auth/callback
+```
+
+For production:
+```env
+GOOGLE_CALLBACK_URL=https://yourdomain.com/auth/callback
+```
+
+#### 3. Restart Backend
+
+After adding the environment variables:
+
+```bash
+docker compose restart backend
+```
+
+#### Current Authentication Features
+
+- ✅ Email/password authentication (fully functional)
+- ✅ Google OAuth sign-in (requires credentials above)
+- ✅ Account modal with sign-in/sign-out
+- ✅ Protected orders and profile pages
+- ✅ Automatic redirect after authentication
+
 ### Access Container Shells
 
 ```bash
@@ -715,6 +763,57 @@ After setup, you can:
    - Set up payment processing
 
 4. **Deploy to Production** - See section below
+
+---
+
+## USPS Shipping Integration
+
+The store includes **real-time USPS shipping rate calculation** with three shipping methods:
+
+### Current Features
+- ✅ **Live Rate Calculation**: Real-time pricing for USPS Ground Advantage, Priority Mail, and Priority Mail Express
+- ✅ **Address Validation**: Automatic address verification and correction using USPS Address API
+- ✅ **Dynamic Weight Calculation**: Total weight calculated from all items in cart
+- ✅ **Three-Step Checkout**: Contact info → Shipping method → Payment
+
+### Testing Environment
+The current setup uses USPS testing credentials (`USPS_CLIENT_ID` and `USPS_CLIENT_SECRET` in `.env`).
+
+**Available Shipping Methods:**
+1. **USPS Ground Advantage** - Affordable ground shipping (2-5 business days)
+2. **USPS Priority Mail** - Fast delivery (1-3 business days)
+3. **USPS Priority Mail Express** - Overnight delivery to most locations
+
+### Future Enhancement: Automated Label Creation
+
+To enable **automatic shipping label generation** and include labels in order confirmation emails:
+
+**Requirements:**
+1. **USPS Business Account**: Sign up at [USPS Business Customer Gateway](https://gateway.usps.com/)
+2. **Enterprise Payment Account (EPS) or Permit**: Required to create labels via API
+3. **Payment Authorization Token**: Call `POST /payments/v3/payment-authorization` with your payment credentials
+
+**Implementation Steps:**
+1. Upgrade from OAuth-only testing credentials to a full USPS Business Account
+2. Obtain EPS account number or Permit number
+3. Implement label creation workflow:
+   - Listen for `order.placed` event
+   - Call USPS Labels API `POST /labels/v3/label` with payment token
+   - Store label URL and tracking number in order metadata
+   - Attach label PDF to order confirmation email
+4. Update email templates to include tracking number and label download link
+
+**Alternative Solution:**
+Consider third-party services like **ShipStation**, **EasyPost**, or **Shippo** which:
+- Provide easier testing/sandbox environments
+- Support multiple carriers (USPS, UPS, FedEx, etc.)
+- Include label generation without complex payment setup
+- Offer simpler API integration
+
+**API Documentation:**
+- Prices API: https://developers.usps.com/domesticpricesv3 (✅ Currently implemented)
+- Labels API: https://developers.usps.com/domesticlabelsv3 (Ready for future implementation)
+- Address API: https://developers.usps.com/addressesv3 (✅ Currently implemented)
 
 ---
 

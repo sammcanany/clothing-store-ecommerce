@@ -6,6 +6,9 @@ const MEDUSA_PUBLISHABLE_KEY = process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY ||
 export const sdk = new Medusa({
   baseUrl: MEDUSA_BACKEND_URL,
   publishableKey: MEDUSA_PUBLISHABLE_KEY,
+  auth: {
+    type: "session",
+  },
 })
 
 // Legacy export for compatibility

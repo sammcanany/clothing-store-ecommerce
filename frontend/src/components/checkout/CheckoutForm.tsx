@@ -5,6 +5,7 @@ import { medusaClient } from '@/lib/config/medusa-client'
 import { formatPrice } from '@/lib/utils/format'
 import { useAddressValidation } from '@/lib/hooks/useAddressValidation'
 import StripePayment from './StripePayment'
+import Toast from '@/components/common/Toast'
 
 export default function CheckoutForm() {
   const router = useRouter()
@@ -20,6 +21,11 @@ export default function CheckoutForm() {
   const [validationStatus, setValidationStatus] = useState<'idle' | 'validating' | 'valid' | 'invalid'>('idle')
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null)
   const userAcceptedAddressRef = useRef(false)
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'warning' | 'info'; isOpen: boolean }>({
+    message: '',
+    type: 'info',
+    isOpen: false
+  })
   
   const [formData, setFormData] = useState({
     email: '',
@@ -135,9 +141,27 @@ export default function CheckoutForm() {
       
       console.log('Update payload:', updateData)
       
-      const updatedCartResponse = await medusaClient.store.cart.update(cart.id, updateData)
+      // Make cart update and address validation in parallel to save time
+      const [updatedCartResponse, addressValidation] = await Promise.all([
+        medusaClient.store.cart.update(cart.id, updateData),
+        validateAddress({
+          streetAddress: formData.address,
+          city: formData.city,
+          state: formData.state,
+          zipCode: formData.postalCode,
+        }).catch(err => {
+          console.warn('Address validation failed:', err)
+          return null // Don't fail checkout if validation fails
+        })
+      ])
+      
       const updatedCart = updatedCartResponse.cart
       console.log('Updated cart response:', updatedCart)
+      
+      if (addressValidation) {
+        console.log('Validated address:', addressValidation)
+        setAddressSuggestion(addressValidation)
+      }
 
       // Refresh cart context for other components
       await refreshCart()
@@ -155,22 +179,21 @@ export default function CheckoutForm() {
       console.log('Number of options:', shippingOptionsResp.shipping_options?.length || 0)
 
       if (shippingOptionsResp.shipping_options && shippingOptionsResp.shipping_options.length > 0) {
-        // Calculate prices for each shipping option by temporarily adding them
-        // Use sequential processing with delay to avoid lock contention
+        // Filter out options without mailClass (old USPS Ground Shipping method)
+        // Calculate prices by adding each option temporarily
+        // Backend will cache rates to minimize USPS API calls
         const optionsWithPrices = []
+        
         for (const option of shippingOptionsResp.shipping_options) {
-          // Skip options without mailClass data (old USPS Ground Shipping method)
+          // Skip options without mailClass data
           if (!option.data?.mailClass) {
             console.log(`Skipping ${option.name} - no mailClass configured`)
-            optionsWithPrices.push({
-              ...option,
-              calculated_amount: null,
-            })
             continue
           }
           
           try {
-            // Temporarily add this shipping method to get the calculated price
+            // Add shipping method to trigger price calculation
+            // Backend caches the USPS API response, so this won't make 3 separate API calls
             const tempCart = await medusaClient.store.cart.addShippingMethod(updatedCart.id, {
               option_id: option.id,
             })
@@ -187,10 +210,11 @@ export default function CheckoutForm() {
               calculated_amount: shippingMethod?.amount || 0,
             })
             
-            // Small delay to avoid lock contention
-            await new Promise(resolve => setTimeout(resolve, 200))
+            // Small delay between requests
+            await new Promise(resolve => setTimeout(resolve, 100))
           } catch (error) {
             console.error(`Failed to calculate price for ${option.name}:`, error)
+            // Still include the option even if price calculation fails
             optionsWithPrices.push({
               ...option,
               calculated_amount: null,
@@ -212,11 +236,11 @@ export default function CheckoutForm() {
         setStep('shipping-method')
       } else {
         console.warn('No shipping options available! You need to create a shipping option in Medusa Admin.')
-        alert('No shipping options available. Please check your location configuration.')
+        setToast({ message: 'No shipping options available. Please check your location configuration.', type: 'error', isOpen: true })
       }
     } catch (error) {
       console.error('Checkout error:', error)
-      alert('Failed to proceed to payment. Please try again.')
+      setToast({ message: 'Failed to proceed to payment. Please try again.', type: 'error', isOpen: true })
     } finally {
       setIsProcessing(false)
     }
@@ -225,7 +249,7 @@ export default function CheckoutForm() {
   const handleShippingMethodSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!selectedShippingOption) {
-      alert('Please select a shipping method')
+      setToast({ message: 'Please select a shipping method', type: 'warning', isOpen: true })
       return
     }
 
@@ -250,7 +274,7 @@ export default function CheckoutForm() {
       setStep('payment')
     } catch (error) {
       console.error('Shipping method error:', error)
-      alert('Failed to add shipping method. Please try again.')
+      setToast({ message: 'Failed to add shipping method. Please try again.', type: 'error', isOpen: true })
     } finally {
       setIsProcessing(false)
     }
@@ -726,6 +750,13 @@ export default function CheckoutForm() {
           </div>
         </div>
       </div>
+      
+      <Toast 
+        isOpen={toast.isOpen} 
+        message={toast.message} 
+        type={toast.type} 
+        onClose={() => setToast({ ...toast, isOpen: false })} 
+      />
     </div>
   )
 }

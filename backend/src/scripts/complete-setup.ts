@@ -60,32 +60,40 @@ export default async function ({ container }: any) {
     // 0. Admin User
     logger.info("0. Setting up admin user...")
     const authModule = container.resolve(Modules.AUTH)
+    const { createUserAccountWorkflow } = await import("@medusajs/core-flows")
+    
     const users = await userModule.listUsers()
     
     if (users.length === 0) {
       const adminEmail = process.env.ADMIN_EMAIL || 'admin@test.com'
       const adminPassword = process.env.ADMIN_PASSWORD || 'supersecret'
       
-      // Create user first
-      const user = await userModule.createUsers({
-        email: adminEmail,
-        first_name: "Admin",
-        last_name: "User",
-      })
-      
-      // Then create auth identity for that user
-      const { success } = await authModule.register("emailpass", {
+      // Register using emailpass provider to properly hash password
+      const { success, authIdentity, error } = await authModule.register("emailpass", {
         body: {
           email: adminEmail,
           password: adminPassword,
         }
+      } as any)
+      
+      if (!success || !authIdentity) {
+        logger.error(`   ✗ Failed to create auth identity: ${error}`)
+        throw new Error(`Auth identity creation failed: ${error}`)
+      }
+      
+      // Create user and link to auth identity using workflow
+      await createUserAccountWorkflow(container).run({
+        input: {
+          authIdentityId: authIdentity.id,
+          userData: {
+            email: adminEmail,
+            first_name: "Admin",
+            last_name: "User",
+          }
+        }
       })
       
-      if (success) {
-        logger.info("   ✓ Created admin user with auth identity")
-      } else {
-        logger.warn("   ⚠ User created but auth identity failed")
-      }
+      logger.info("   ✓ Created admin user with auth identity")
     } else {
       logger.info("   ✓ Admin user exists")
     }
@@ -576,6 +584,48 @@ export default async function ({ container }: any) {
         } catch (error: any) {
           logger.warn(`   ⚠ Could not assign "${product.title}": ${error.message}`)
         }
+      }
+    }
+
+    // 8. Create product_review table for reviews feature
+    logger.info("8. Setting up product reviews table...")
+    try {
+      const { Client } = require('pg')
+      const client = new Client({
+        connectionString: process.env.DATABASE_URL
+      })
+      
+      await client.connect()
+      
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS product_review (
+          id VARCHAR(255) PRIMARY KEY DEFAULT ('review_' || substr(md5(random()::text || clock_timestamp()::text), 1, 26)),
+          product_id VARCHAR(255) NOT NULL,
+          customer_id VARCHAR(255) NOT NULL,
+          rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+          title VARCHAR(500),
+          content TEXT,
+          verified_purchase BOOLEAN DEFAULT false,
+          is_approved BOOLEAN DEFAULT true,
+          helpful_count INTEGER DEFAULT 0,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          UNIQUE(product_id, customer_id)
+        );
+      `)
+      
+      await client.query(`CREATE INDEX IF NOT EXISTS idx_product_review_product_id ON product_review(product_id);`)
+      await client.query(`CREATE INDEX IF NOT EXISTS idx_product_review_customer_id ON product_review(customer_id);`)
+      await client.query(`CREATE INDEX IF NOT EXISTS idx_product_review_approved ON product_review(is_approved);`)
+      
+      await client.end()
+      
+      logger.info("   ✓ Created product_review table with indexes")
+    } catch (error: any) {
+      if (error.message?.includes('already exists')) {
+        logger.info("   ✓ Product review table already exists")
+      } else {
+        logger.warn(`   ⚠ Could not create review table: ${error.message}`)
       }
     }
 

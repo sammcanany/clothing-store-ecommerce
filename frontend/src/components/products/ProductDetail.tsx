@@ -3,6 +3,8 @@ import Image from 'next/image'
 import { useCart } from '@/lib/context/cart-context'
 import { formatPrice } from '@/lib/utils/format'
 import ShippingCalculator from '@/components/shipping/ShippingCalculator'
+import CartModal from '@/components/cart/CartModal'
+import Toast from '@/components/common/Toast'
 
 interface ProductDetailProps {
   product: any
@@ -13,15 +15,21 @@ export default function ProductDetail({ product }: ProductDetailProps) {
   const [selectedVariant, setSelectedVariant] = useState(product.variants?.[0])
   const [quantity, setQuantity] = useState(1)
   const [isAdding, setIsAdding] = useState(false)
+  const [showCartModal, setShowCartModal] = useState(false)
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'warning' | 'info'; isOpen: boolean }>({
+    message: '',
+    type: 'error',
+    isOpen: false
+  })
 
   const handleAddToCart = async () => {
     if (!selectedVariant) return
     setIsAdding(true)
     try {
       await addToCart(selectedVariant.id, quantity)
-      alert('Added to cart!')
+      setShowCartModal(true)
     } catch (error) {
-      alert('Failed to add to cart')
+      setToast({ message: 'Failed to add to cart', type: 'error', isOpen: true })
     } finally {
       setIsAdding(false)
     }
@@ -136,6 +144,20 @@ export default function ProductDetail({ product }: ProductDetailProps) {
           />
         </div>
       </div>
+
+      {/* Cart Modal */}
+      <CartModal
+        isOpen={showCartModal}
+        onClose={() => setShowCartModal(false)}
+      />
+      
+      {/* Toast Notification */}
+      <Toast 
+        isOpen={toast.isOpen} 
+        message={toast.message} 
+        type={toast.type} 
+        onClose={() => setToast({ ...toast, isOpen: false })} 
+      />
     </div>
   )
 }

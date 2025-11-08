@@ -101,70 +101,140 @@ class UspsProviderService extends AbstractFulfillmentProviderService {
 
   /**
    * Calculate the shipping price using USPS API
+   * Note: We make ONE API call without mailClass to get ALL rates, then cache them
    */
+  private ratesCache: Map<string, { rates: any[], timestamp: number }> = new Map()
+  private readonly CACHE_TTL = 5 * 60 * 1000 // 5 minutes
+
   async calculatePrice(
     optionData: CalculateShippingOptionPriceDTO["optionData"],
     data: CalculateShippingOptionPriceDTO["data"],
     context: CalculateShippingOptionPriceDTO["context"]
   ): Promise<CalculatedShippingOptionPrice> {
+    const cart = context as any
+    
+    // Get mail class from option data
+    const mailClass = (optionData as any)?.mailClass || this.options_.defaultMailClass
+    
+    if (!mailClass) {
+      throw new Error("Mail class is required for USPS shipping")
+    }
+    
     try {
-      const cart = context as any
-      
       // Get shipping address from cart
       const shippingAddress = cart?.shipping_address
       if (!shippingAddress || !shippingAddress.postal_code) {
         throw new Error("Shipping address with postal code is required")
       }
 
-      // Get package dimensions from cart items
-      // You may want to calculate total weight and dimensions based on products
-      const weight = this.calculateWeight(cart.items || [])
-      const dimensions = this.calculateDimensions(cart.items || [])
-
-      // Get mail class from option data
-      const mailClass = (optionData as any)?.mailClass || this.options_.defaultMailClass
-
-      // Calculate rates using USPS API
-      const rateResponse = await this.client_.calculateRates({
-        originZIPCode: this.options_.originZIPCode,
-        destinationZIPCode: shippingAddress.postal_code,
-        weight: weight,
-        length: dimensions.length,
-        width: dimensions.width,
-        height: dimensions.height,
-        mailClass: mailClass,
-        priceType: "RETAIL",
-      })
-
-      // Find the matching rate for the selected mail class
-      // Note: USPS API returns rateOptions[].rates[] structure
-      let selectedRate: any = null
+      // Create cache key
+      const cacheKey = `${this.options_.originZIPCode}-${shippingAddress.postal_code}-${cart.id}`
       
-      for (const rateOption of rateResponse.rateOptions || []) {
-        const matchingRate = rateOption.rates?.find(
-          (rate: any) => rate.mailClass === mailClass
-        )
-        if (matchingRate) {
-          selectedRate = matchingRate
-          break
+      // Check cache first
+      let allRates: any[] = []
+      const cached = this.ratesCache.get(cacheKey)
+      
+      if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
+        this.logger_.info(`Using cached rates for ${cacheKey}`)
+        allRates = cached.rates
+      } else {
+        // Get package dimensions from cart items
+        const weight = this.calculateWeight(cart.items || [])
+        const dimensions = this.calculateDimensions(cart.items || [])
+
+        this.logger_.info(`Making USPS API call WITHOUT mailClass to get all rates`)
+        
+        // Try making ONE API call without mailClass parameter to get ALL rates
+        try {
+          const rateResponse = await this.client_.calculateRates({
+            originZIPCode: this.options_.originZIPCode,
+            destinationZIPCode: shippingAddress.postal_code,
+            weight: weight,
+            length: dimensions.length,
+            width: dimensions.width,
+            height: dimensions.height,
+            // NOT passing mailClass - hoping API returns all available rates
+            priceType: "RETAIL",
+          })
+          
+          // Extract all rates from response
+          for (const rateOption of rateResponse.rateOptions || []) {
+            for (const rate of rateOption.rates || []) {
+              allRates.push(rate)
+            }
+          }
+          
+          if (allRates.length > 0) {
+            this.logger_.info(`Got ${allRates.length} rates from single API call!`)
+            this.logger_.info(`Available mail classes: ${allRates.map(r => r.mailClass).join(', ')}`)
+            // Log the FULL structure of the first rate to see available fields
+            this.logger_.info(`Sample rate object: ${JSON.stringify(allRates[0], null, 2)}`)
+          } else {
+            this.logger_.warn(`No rates returned without mailClass, falling back to multiple calls`)
+            throw new Error("No rates returned")
+          }
+        } catch (error) {
+          // Fallback: If API requires mailClass, make 3 separate calls
+          this.logger_.info(`Single API call failed, making 3 separate calls: ${error.message}`)
+          
+          const mailClasses = [
+            "PRIORITY_MAIL",
+            "PRIORITY_MAIL_EXPRESS", 
+            "USPS_GROUND_ADVANTAGE"
+          ]
+          
+          const ratePromises = mailClasses.map(async (mc) => {
+            try {
+              const rateResponse = await this.client_.calculateRates({
+                originZIPCode: this.options_.originZIPCode,
+                destinationZIPCode: shippingAddress.postal_code,
+                weight: weight,
+                length: dimensions.length,
+                width: dimensions.width,
+                height: dimensions.height,
+                mailClass: mc as any,
+                priceType: "RETAIL",
+              })
+              
+              for (const rateOption of rateResponse.rateOptions || []) {
+                for (const rate of rateOption.rates || []) {
+                  return { ...rate, mailClass: mc }
+                }
+              }
+              return null
+            } catch (err) {
+              this.logger_.warn(`Failed to get rate for ${mc}: ${err.message}`)
+              return null
+            }
+          })
+          
+          const results = await Promise.all(ratePromises)
+          allRates = results.filter(r => r !== null)
         }
+        
+        // Cache the results
+        this.ratesCache.set(cacheKey, {
+          rates: allRates,
+          timestamp: Date.now()
+        })
+        
+        this.logger_.info(`Cached ${allRates.length} rates for ${cacheKey}`)
       }
 
-      if (!selectedRate) {
-        this.logger_.error(`No rate found for mail class: ${mailClass}`)
-        this.logger_.error(`Available mail classes: ${JSON.stringify(
-          rateResponse.rateOptions?.flatMap((opt: any) => 
-            opt.rates?.map((r: any) => r.mailClass) || []
-          )
-        )}`)
-        throw new Error(`No rate found for mail class: ${mailClass}`)
+      // Find the rate for this specific mail class
+      const selectedRate = allRates.find(rate => rate.mailClass === mailClass)
+
+      if (!selectedRate || selectedRate.price === undefined) {
+        this.logger_.warn(`No rate found for mail class: ${mailClass}`)
+        this.logger_.info(`Looking for: "${mailClass}"`)
+        this.logger_.info(`Available rates: ${JSON.stringify(allRates.map(r => ({ mailClass: r.mailClass, price: r.price })), null, 2)}`)
+        throw new Error(`No rate available for ${mailClass}`)
       }
 
-      // Return price as-is (USPS returns in dollars, Medusa expects dollars for USD)
-      const calculatedAmount = selectedRate.price
+      this.logger_.info(`Calculated USPS ${mailClass} rate: $${selectedRate.price}`)
 
       return {
-        calculated_amount: calculatedAmount,
+        calculated_amount: selectedRate.price, // Price already in cents from USPS API
         is_calculated_price_tax_inclusive: false,
       }
     } catch (error) {

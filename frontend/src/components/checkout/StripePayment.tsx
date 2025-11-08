@@ -5,6 +5,7 @@ import { loadStripe } from "@stripe/stripe-js"
 import { useCart } from "@/lib/context/cart-context"
 import { useState } from "react"
 import { medusaClient } from "@/lib/config/medusa-client"
+import Toast from "@/components/common/Toast"
 
 const stripePromise = loadStripe(
   process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || ""
@@ -54,6 +55,11 @@ const StripeForm = ({ clientSecret, billingAddress }: StripeFormProps) => {
   const { cart, clearCart } = useCart()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'warning' | 'info'; isOpen: boolean }>({
+    message: '',
+    type: 'success',
+    isOpen: false
+  })
 
   const stripe = useStripe()
   const elements = useElements()
@@ -172,12 +178,17 @@ const StripeForm = ({ clientSecret, billingAddress }: StripeFormProps) => {
       if (response.type === "order" && response.order) {
         // Success! Order placed
         console.log("Order placed successfully:", response.order)
-        // Clear cart and create a new one
-        await clearCart()
-        // Show success message
-        alert("Order placed successfully! Check your email for confirmation.")
-        // Use window.location to force a full page reload so cart state refreshes
-        window.location.href = "/"
+        
+        // Save order details to sessionStorage for confirmation page
+        try {
+          sessionStorage.setItem('lastOrder', JSON.stringify(response.order))
+          console.log("Order saved to sessionStorage")
+        } catch (e) {
+          console.error("Failed to save order to sessionStorage:", e)
+        }
+        
+        // Redirect to order confirmation page FIRST
+        window.location.href = "/order-confirmation?order_id=" + response.order.id
       }
     } catch (err: any) {
       console.error("Payment error:", err)
@@ -225,6 +236,14 @@ const StripeForm = ({ clientSecret, billingAddress }: StripeFormProps) => {
       <p className="text-xs text-neutral-500 text-center">
         Test card: 4242 4242 4242 4242 | Any future date | Any 3-digit CVC
       </p>
+      
+      <Toast 
+        isOpen={toast.isOpen} 
+        message={toast.message} 
+        type={toast.type} 
+        onClose={() => setToast({ ...toast, isOpen: false })}
+        duration={5000}
+      />
     </div>
   )
 }
