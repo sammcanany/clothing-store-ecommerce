@@ -143,9 +143,16 @@ export default async function ({ container }: any) {
       }
     }
     
-    // 2.1. Currency preference is set via region, no need for separate update
-    logger.info("2.1. Currency preference set via region (USD)")
-    logger.info("   ✓ Currency is USD")
+    // 2.1. Set default region on store
+    logger.info("2.1. Setting default region on store...")
+    try {
+      await storeModule.updateStores(store.id, {
+        default_region_id: defaultRegion.id
+      })
+      logger.info("   ✓ Set default region to United States")
+    } catch (error: any) {
+      logger.warn(`   ⚠ Could not set default region: ${error.message}`)
+    }
 
     // 2.2. Create USPS Shipping Option
     logger.info("2.2. Setting up USPS shipping option...")
@@ -176,6 +183,16 @@ export default async function ({ container }: any) {
         logger.info(`   ✓ Created stock location (${warehouseCity}, ${warehouseState} ${warehouseZip})`)
       } else {
         logger.info("   ✓ Stock location exists")
+      }
+
+      // Set as default stock location on store
+      try {
+        await storeModule.updateStores(store.id, {
+          default_location_id: location.id
+        })
+        logger.info("   ✓ Set default stock location")
+      } catch (error: any) {
+        logger.warn(`   ⚠ Could not set default stock location: ${error.message}`)
       }
 
       // Link sales channel to stock location (required for fulfillment set discovery)
