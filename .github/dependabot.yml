@@ -1,0 +1,70 @@
+version: 2
+updates:
+  # Backend npm packages
+  - package-ecosystem: "npm"
+    directory: "/backend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    groups:
+      medusa:
+        patterns:
+          - "@medusajs/*"
+      production:
+        patterns:
+          - "*"
+        exclude-patterns:
+          - "@medusajs/*"
+        update-types:
+          - "minor"
+          - "patch"
+    labels:
+      - "dependencies"
+      - "backend"
+    open-pull-requests-limit: 5
+
+  # Frontend npm packages
+  - package-ecosystem: "npm"
+    directory: "/frontend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    groups:
+      react:
+        patterns:
+          - "react"
+          - "react-dom"
+      next:
+        patterns:
+          - "next"
+      medusa:
+        patterns:
+          - "@medusajs/*"
+      production:
+        patterns:
+          - "*"
+        exclude-patterns:
+          - "react*"
+          - "next"
+          - "@medusajs/*"
+        update-types:
+          - "minor"
+          - "patch"
+    labels:
+      - "dependencies"
+      - "frontend"
+    open-pull-requests-limit: 5
+
+  # Docker images in docker-compose.yml
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    labels:
+      - "dependencies"
+      - "docker"
+    open-pull-requests-limit: 3
