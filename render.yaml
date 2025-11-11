@@ -1,0 +1,74 @@
+# render.yaml - Infrastructure as Code for Render.com
+# This file allows you to deploy everything with one click
+
+services:
+  # Backend API Service
+  - type: web
+    name: clothing-store-backend
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile.railway
+    dockerContext: ./backend
+    plan: free  # Free tier: 750 hours/month (sleeps after 15 min inactivity)
+    region: oregon  # Choose: oregon, frankfurt, singapore
+    branch: main
+    healthCheckPath: /health
+    envVars:
+      # Reference database and redis from other services
+      - key: DATABASE_URL
+        fromDatabase:
+          name: clothing-store-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: clothing-store-redis
+          type: redis
+          property: connectionString
+      # These you need to add manually in Render dashboard
+      - key: JWT_SECRET
+        sync: false
+      - key: COOKIE_SECRET
+        sync: false
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: STORE_CORS
+        sync: false
+      - key: ADMIN_CORS
+        sync: false
+      - key: AUTH_CORS
+        sync: false
+      - key: STRIPE_API_KEY
+        sync: false
+      - key: USPS_CLIENT_ID
+        sync: false
+      - key: USPS_CLIENT_SECRET
+        sync: false
+      - key: USPS_ENVIRONMENT
+        value: production
+      - key: WAREHOUSE_ADDRESS
+        sync: false
+      - key: WAREHOUSE_CITY
+        sync: false
+      - key: WAREHOUSE_STATE
+        sync: false
+      - key: WAREHOUSE_ZIP
+        sync: false
+      - key: WAREHOUSE_COUNTRY
+        value: US
+      - key: NODE_ENV
+        value: production
+      - key: MEDUSA_DISABLE_TELEMETRY
+        value: true
+
+databases:
+  # PostgreSQL Database
+  - name: clothing-store-db
+    plan: free  # Free tier: 90 days, then converts to paid or expires
+    databaseName: medusa_db
+    user: medusa_user
+    region: oregon
+
+# Note: Render does NOT have free Redis tier
+# You need to use Upstash (free) instead and set REDIS_URL manually
+# Or pay $7/month for Render Redis
