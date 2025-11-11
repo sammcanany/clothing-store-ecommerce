@@ -1,27 +1,28 @@
 import { loadEnv, defineConfig, Modules, ContainerRegistrationKeys } from "@medusajs/utils"
+import { SecurityConfig } from "./src/config/security"
 
 loadEnv(process.env.NODE_ENV || "development", process.cwd())
 
-// Environment check
-const isProduction = process.env.NODE_ENV === "production"
-const isDevelopment = process.env.NODE_ENV === "development" || !process.env.NODE_ENV
+// Validate critical secrets based on environment
+if (SecurityConfig.secrets.requireStrong) {
+  const minLength = SecurityConfig.secrets.minLength
 
-// Validate critical secrets in production
-if (isProduction) {
-  if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
-    throw new Error("JWT_SECRET must be set and at least 32 characters in production")
+  if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < minLength) {
+    throw new Error(`JWT_SECRET must be set and at least ${minLength} characters in production`)
   }
-  if (!process.env.COOKIE_SECRET || process.env.COOKIE_SECRET.length < 32) {
-    throw new Error("COOKIE_SECRET must be set and at least 32 characters in production")
+  if (!process.env.COOKIE_SECRET || process.env.COOKIE_SECRET.length < minLength) {
+    throw new Error(`COOKIE_SECRET must be set and at least ${minLength} characters in production`)
   }
   if (!process.env.DATABASE_URL) {
     throw new Error("DATABASE_URL must be set in production")
   }
 }
 
-// Development-only fallback secrets (NEVER use in production)
-const jwtSecret = process.env.JWT_SECRET || (isDevelopment ? "dev_jwt_secret_change_in_production" : undefined)
-const cookieSecret = process.env.COOKIE_SECRET || (isDevelopment ? "dev_cookie_secret_change_in_production" : undefined)
+// Environment-appropriate fallback secrets
+const jwtSecret = process.env.JWT_SECRET ||
+  (SecurityConfig.isDevelopment ? "dev_jwt_secret_change_in_production" : undefined)
+const cookieSecret = process.env.COOKIE_SECRET ||
+  (SecurityConfig.isDevelopment ? "dev_cookie_secret_change_in_production" : undefined)
 
 if (!jwtSecret || !cookieSecret) {
   throw new Error("JWT_SECRET and COOKIE_SECRET must be set")
@@ -38,21 +39,15 @@ module.exports = defineConfig({
       jwtSecret,
       cookieSecret,
       cookieOptions: {
-        sameSite: isProduction ? "strict" : "lax",
-        secure: isProduction,
-        httpOnly: true,
+        sameSite: SecurityConfig.cookies.sameSite as "strict" | "lax" | "none",
+        secure: SecurityConfig.cookies.secure,
+        httpOnly: SecurityConfig.cookies.httpOnly,
       },
     },
-    databaseDriverOptions: isProduction
-      ? {
-          ssl: {
-            rejectUnauthorized: true,
-          },
-        }
-      : {
-          ssl: false,
-          sslmode: "disable",
-        },
+    databaseDriverOptions: SecurityConfig.database.ssl || {
+      ssl: false,
+      sslmode: "disable",
+    },
   },
   admin: {
     backendUrl: process.env.MEDUSA_BACKEND_URL || "http://localhost:9000",
