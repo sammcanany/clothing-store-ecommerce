@@ -10,6 +10,11 @@
     "healthcheckPath": "/health",
     "healthcheckTimeout": 100,
     "restartPolicyType": "ON_FAILURE",
-    "restartPolicyMaxRetries": 10
+    "restartPolicyMaxRetries": 10,
+    "sleepApplication": false
+  },
+  "resources": {
+    "memory": "512Mi",
+    "cpu": "0.5"
   }
 }
