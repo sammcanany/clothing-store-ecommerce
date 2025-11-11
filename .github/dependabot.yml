@@ -1,0 +1,82 @@
+version: 2
+updates:
+  # Backend npm packages
+  - package-ecosystem: "npm"
+    directory: "/backend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    groups:
+      medusa:
+        patterns:
+          - "@medusajs/*"
+      production:
+        patterns:
+          - "*"
+        exclude-patterns:
+          - "@medusajs/*"
+        update-types:
+          - "minor"
+          - "patch"
+    labels:
+      - "dependencies"
+      - "backend"
+    open-pull-requests-limit: 5
+
+  # Frontend npm packages
+  - package-ecosystem: "npm"
+    directory: "/frontend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    groups:
+      react:
+        patterns:
+          - "react"
+          - "react-dom"
+      next:
+        patterns:
+          - "next"
+      medusa:
+        patterns:
+          - "@medusajs/*"
+      production:
+        patterns:
+          - "*"
+        exclude-patterns:
+          - "react*"
+          - "next"
+          - "@medusajs/*"
+        update-types:
+          - "minor"
+          - "patch"
+    labels:
+      - "dependencies"
+      - "frontend"
+    open-pull-requests-limit: 5
+
+  # Docker base images (postgres, redis, node) in docker-compose.yml and Dockerfiles
+  # Note: Monitors base images only, not the docker-compose.yml syntax itself
+  - package-ecosystem: "docker"
+    directory: "/backend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    labels:
+      - "dependencies"
+      - "docker"
+    open-pull-requests-limit: 3
+
+  - package-ecosystem: "docker"
+    directory: "/frontend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    labels:
+      - "dependencies"
+      - "docker"
+    open-pull-requests-limit: 3
