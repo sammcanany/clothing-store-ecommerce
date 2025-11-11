@@ -1,7 +1,9 @@
 import { defineMiddlewares } from "@medusajs/medusa"
 import { MedusaRequest, MedusaResponse, MedusaNextFunction } from "@medusajs/framework/http"
+import { SecurityConfig } from "../config/security"
 
 // Simple in-memory rate limiter (for production, use Redis-based solution)
+// Rate limiting is automatically disabled in development mode unless RATE_LIMITING_ENABLED=true
 interface RateLimitEntry {
   count: number
   resetTime: number
@@ -25,6 +27,11 @@ function rateLimit(options: {
   keyPrefix: string
 }) {
   return (req: MedusaRequest, res: MedusaResponse, next: MedusaNextFunction) => {
+    // Skip rate limiting if disabled (e.g., in development)
+    if (!SecurityConfig.rateLimiting.enabled) {
+      return next()
+    }
+
     // Get client identifier (IP address or customer ID if authenticated)
     const identifier = req.auth_context?.actor_id ||
                       req.headers['x-forwarded-for'] ||
@@ -69,48 +76,52 @@ function rateLimit(options: {
 
 export default defineMiddlewares({
   routes: [
-    // Rate limit authentication endpoints - 5 attempts per 15 minutes
+    // Rate limit authentication endpoints
+    // Dev: 1000 requests per minute | Prod: 5 attempts per 15 minutes
     {
       matcher: "/auth/*",
       middlewares: [
         rateLimit({
-          windowMs: 15 * 60 * 1000, // 15 minutes
-          maxRequests: 5,
+          windowMs: SecurityConfig.rateLimiting.auth.windowMs,
+          maxRequests: SecurityConfig.rateLimiting.auth.maxRequests,
           keyPrefix: "auth"
         })
       ]
     },
-    // Rate limit review submissions - 3 per hour per user
+    // Rate limit review submissions
+    // Dev: 100 per minute | Prod: 3 per hour per user
     {
       matcher: "/store/products/*/reviews",
       method: "POST",
       middlewares: [
         rateLimit({
-          windowMs: 60 * 60 * 1000, // 1 hour
-          maxRequests: 3,
+          windowMs: SecurityConfig.rateLimiting.reviews.windowMs,
+          maxRequests: SecurityConfig.rateLimiting.reviews.maxRequests,
           keyPrefix: "review"
         })
       ]
     },
-    // Rate limit USPS rate calculations - 30 per minute per IP
+    // Rate limit USPS rate calculations
+    // Dev: 1000 per minute | Prod: 30 per minute per IP
     {
       matcher: "/store/usps/calculate-rates",
       method: "POST",
       middlewares: [
         rateLimit({
-          windowMs: 60 * 1000, // 1 minute
-          maxRequests: 30,
+          windowMs: SecurityConfig.rateLimiting.usps.windowMs,
+          maxRequests: SecurityConfig.rateLimiting.usps.maxRequests,
           keyPrefix: "usps"
         })
       ]
     },
-    // General API rate limit - 100 requests per minute per IP
+    // General API rate limit
+    // Dev: 10000 per minute | Prod: 100 requests per minute per IP
     {
       matcher: "/store/*",
       middlewares: [
         rateLimit({
-          windowMs: 60 * 1000, // 1 minute
-          maxRequests: 100,
+          windowMs: SecurityConfig.rateLimiting.api.windowMs,
+          maxRequests: SecurityConfig.rateLimiting.api.maxRequests,
           keyPrefix: "api"
         })
       ]
