@@ -3,17 +3,50 @@
 export async function POST(req: any, res: any): Promise<void> {
   try {
     const { destinationZip, weight = 1, dimensions } = req.body || {}
-    
-    // Debug: log what we received
-    console.log('=== USPS CALCULATE RATES DEBUG ===')
-    console.log('destinationZip:', destinationZip)
-    console.log('weight:', weight, 'type:', typeof weight)
-    console.log('dimensions:', JSON.stringify(dimensions))
-    console.log('===================================')
 
+    // Input validation - destinationZip required
     if (!destinationZip) {
       res.status(400).json({ error: "destinationZip is required" })
       return
+    }
+
+    // Validate ZIP code format (5 digits or 5+4 format)
+    const zipRegex = /^\d{5}(-\d{4})?$/
+    if (!zipRegex.test(destinationZip)) {
+      res.status(400).json({ error: "Invalid ZIP code format. Must be 5 digits or ZIP+4 format (e.g., 12345 or 12345-6789)" })
+      return
+    }
+
+    // Validate weight range (USPS max is 70 lbs for most services)
+    const weightNum = Number(weight)
+    if (isNaN(weightNum) || weightNum < 0.1 || weightNum > 70) {
+      res.status(400).json({ error: "Weight must be between 0.1 and 70 pounds" })
+      return
+    }
+
+    // Validate dimensions if provided
+    if (dimensions) {
+      const length = Number(dimensions.length)
+      const width = Number(dimensions.width)
+      const height = Number(dimensions.height)
+
+      if (isNaN(length) || isNaN(width) || isNaN(height)) {
+        res.status(400).json({ error: "Dimensions must be valid numbers" })
+        return
+      }
+
+      if (length < 1 || length > 108 || width < 1 || width > 108 || height < 1 || height > 108) {
+        res.status(400).json({ error: "Each dimension must be between 1 and 108 inches" })
+        return
+      }
+
+      // Check combined length and girth (USPS max is 130 inches for most services)
+      const girth = 2 * (width + height)
+      const combinedLengthGirth = length + girth
+      if (combinedLengthGirth > 130) {
+        res.status(400).json({ error: "Combined length and girth cannot exceed 130 inches" })
+        return
+      }
     }
 
     // Use require with absolute path from app root
@@ -29,14 +62,6 @@ export async function POST(req: any, res: any): Promise<void> {
     
     const originZip = process.env.WAREHOUSE_ZIP || "66217"
     
-    // Log incoming request
-    req.scope.resolve("logger")?.info?.("USPS calculate-rates request:", { 
-      destinationZip, 
-      weight, 
-      dimensions,
-      dimensionsType: typeof dimensions?.length
-    })
-    
     // Ensure dimensions are numbers (they might come as strings from DB)
     const packageDimensions = dimensions ? {
       length: Number(dimensions.length) || 10,
@@ -44,14 +69,7 @@ export async function POST(req: any, res: any): Promise<void> {
       height: Number(dimensions.height) || 2
     } : { length: 10, width: 8, height: 2 }
     
-    const packageWeight = Math.max(Number(weight) || 0.5, 0.1)
-    
-    req.scope.resolve("logger")?.info?.("Sending to USPS:", { 
-      packageDimensions,
-      packageWeight,
-      originZip,
-      destinationZip
-    })
+    const packageWeight = weightNum
 
     const mailClasses = [
       { id: "PRIORITY_MAIL", name: "USPS Priority Mail" },
@@ -99,7 +117,7 @@ export async function POST(req: any, res: any): Promise<void> {
     res.json({ originZip, destinationZip, rates: rates.sort((a, b) => a.price - b.price) })
   } catch (err: any) {
     req.scope.resolve("logger")?.error?.("USPS calculate-rates error", err)
-    res.status(500).json({ error: err?.message || "Internal error" })
+    res.status(500).json({ error: "Unable to calculate shipping rates at this time" })
   }
 }
 

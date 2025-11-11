@@ -2,6 +2,31 @@ import { loadEnv, defineConfig, Modules, ContainerRegistrationKeys } from "@medu
 
 loadEnv(process.env.NODE_ENV || "development", process.cwd())
 
+// Environment check
+const isProduction = process.env.NODE_ENV === "production"
+const isDevelopment = process.env.NODE_ENV === "development" || !process.env.NODE_ENV
+
+// Validate critical secrets in production
+if (isProduction) {
+  if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
+    throw new Error("JWT_SECRET must be set and at least 32 characters in production")
+  }
+  if (!process.env.COOKIE_SECRET || process.env.COOKIE_SECRET.length < 32) {
+    throw new Error("COOKIE_SECRET must be set and at least 32 characters in production")
+  }
+  if (!process.env.DATABASE_URL) {
+    throw new Error("DATABASE_URL must be set in production")
+  }
+}
+
+// Development-only fallback secrets (NEVER use in production)
+const jwtSecret = process.env.JWT_SECRET || (isDevelopment ? "dev_jwt_secret_change_in_production" : undefined)
+const cookieSecret = process.env.COOKIE_SECRET || (isDevelopment ? "dev_cookie_secret_change_in_production" : undefined)
+
+if (!jwtSecret || !cookieSecret) {
+  throw new Error("JWT_SECRET and COOKIE_SECRET must be set")
+}
+
 module.exports = defineConfig({
   projectConfig: {
     databaseUrl: process.env.DATABASE_URL,
@@ -10,13 +35,24 @@ module.exports = defineConfig({
       storeCors: process.env.STORE_CORS!,
       adminCors: process.env.ADMIN_CORS!,
       authCors: process.env.AUTH_CORS!,
-      jwtSecret: process.env.JWT_SECRET || "supersecret",
-      cookieSecret: process.env.COOKIE_SECRET || "supersecret",
+      jwtSecret,
+      cookieSecret,
+      cookieOptions: {
+        sameSite: isProduction ? "strict" : "lax",
+        secure: isProduction,
+        httpOnly: true,
+      },
     },
-    databaseDriverOptions: {
-      ssl: false,
-      sslmode: "disable",
-    },
+    databaseDriverOptions: isProduction
+      ? {
+          ssl: {
+            rejectUnauthorized: true,
+          },
+        }
+      : {
+          ssl: false,
+          sslmode: "disable",
+        },
   },
   admin: {
     backendUrl: process.env.MEDUSA_BACKEND_URL || "http://localhost:9000",
