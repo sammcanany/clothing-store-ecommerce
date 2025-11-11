@@ -47,16 +47,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (token: string) => {
     try {
-      // Store token
-      localStorage.setItem('auth_token', token)
-
-      // Create session
+      // Create session with HTTP-only cookie (secure)
+      // Note: Session is stored in secure HTTP-only cookies, not localStorage
       const sessionResponse = await fetch(`${process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL || 'http://localhost:9000'}/auth/session`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
         },
-        credentials: 'include',
+        credentials: 'include', // Includes cookies in request
       })
 
       if (!sessionResponse.ok) {
@@ -65,7 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // Fetch customer data
       await fetchCustomer()
-      
+
       // Associate existing cart with logged-in customer
       const cartId = localStorage.getItem('cart_id')
       if (cartId) {
@@ -86,6 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     try {
+      // Delete session (clears HTTP-only cookie)
       await fetch(`${process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL || 'http://localhost:9000'}/auth/session`, {
         method: 'DELETE',
         credentials: 'include',
@@ -93,7 +92,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       console.error('Logout failed:', error)
     } finally {
-      localStorage.removeItem('auth_token')
       setCustomer(null)
     }
   }

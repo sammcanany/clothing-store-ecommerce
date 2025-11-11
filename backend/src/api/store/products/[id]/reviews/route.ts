@@ -97,9 +97,39 @@ export const POST = async (
   }
 
   // Validate rating
-  if (!rating || rating < 1 || rating > 5) {
-    res.status(400).json({ error: "Rating must be between 1 and 5" })
+  if (!rating || typeof rating !== 'number' || rating < 1 || rating > 5 || !Number.isInteger(rating)) {
+    res.status(400).json({ error: "Rating must be an integer between 1 and 5" })
     return
+  }
+
+  // Validate product ID format (basic sanity check)
+  if (!id || typeof id !== 'string' || id.length < 1 || id.length > 255) {
+    res.status(400).json({ error: "Invalid product ID" })
+    return
+  }
+
+  // Validate title if provided
+  if (title !== undefined && title !== null) {
+    if (typeof title !== 'string') {
+      res.status(400).json({ error: "Title must be a string" })
+      return
+    }
+    if (title.length > 200) {
+      res.status(400).json({ error: "Title must be 200 characters or less" })
+      return
+    }
+  }
+
+  // Validate content if provided
+  if (content !== undefined && content !== null) {
+    if (typeof content !== 'string') {
+      res.status(400).json({ error: "Content must be a string" })
+      return
+    }
+    if (content.length > 5000) {
+      res.status(400).json({ error: "Review content must be 5000 characters or less" })
+      return
+    }
   }
 
   try {
@@ -166,8 +196,10 @@ export const POST = async (
     })
     return
   } catch (error) {
+    // Log detailed error server-side only
     console.error("Error creating review:", error)
-    res.status(500).json({ error: "Failed to create review" })
+    // Return generic error to client
+    res.status(500).json({ error: "Unable to submit review at this time. Please try again later." })
     return
   }
 }
