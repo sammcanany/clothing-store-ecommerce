@@ -1,0 +1,7 @@
+{
+  "buildCommand": "npm run build:admin",
+  "outputDirectory": ".medusa/admin",
+  "installCommand": "npm install --legacy-peer-deps",
+  "framework": null,
+  "devCommand": null
+}

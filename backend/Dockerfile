@@ -12,8 +12,8 @@ RUN npm install --legacy-peer-deps
 # Copy application files
 COPY . .
 
-# Build backend only (skip admin to stay within free tier memory limits)
-RUN NODE_OPTIONS="--max-old-space-size=350" npx medusa build --skip-admin
+# Build backend with aggressive memory limits for free tier
+RUN NODE_OPTIONS="--max-old-space-size=350" npx medusa build
 
 # Expose port
 EXPOSE 9000

@@ -4,6 +4,7 @@
   "description": "Medusa 2.11.3 backend for clothing e-commerce store",
   "scripts": {
     "build": "npx medusa build",
+    "build:admin": "npx medusa build --admin-only",
     "setup": "npx medusa exec ./src/scripts/complete-setup.ts",
     "full-setup": "npx medusa db:migrate && npm run setup",
     "start": "npm run build && npx medusa start",
