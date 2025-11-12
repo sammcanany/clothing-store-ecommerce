@@ -12,8 +12,8 @@ RUN npm install --legacy-peer-deps
 # Copy application files
 COPY . .
 
-# Build the application
-RUN npm run build
+# Build the application with production environment
+RUN NODE_ENV=production npm run build
 
 # Expose port
 EXPOSE 9000

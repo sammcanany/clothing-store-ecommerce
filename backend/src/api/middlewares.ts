@@ -34,7 +34,7 @@ function rateLimit(options: {
     }
 
     // Get client identifier (IP address or customer ID if authenticated)
-    const identifier = req.auth_context?.actor_id ||
+    const identifier = (req as any).auth_context?.actor_id ||
                       req.headers['x-forwarded-for'] ||
                       req.headers['x-real-ip'] ||
                       req.ip ||
