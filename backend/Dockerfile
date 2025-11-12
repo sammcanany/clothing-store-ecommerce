@@ -12,8 +12,12 @@ RUN npm install --legacy-peer-deps
 # Copy application files
 COPY . .
 
+# Build the application
+RUN npm run build
+
 # Expose port
 EXPOSE 9000
 
-# Just start the server - migrations already done in Supabase
-CMD npm run dev
+# Start server with memory limit for Render's free tier (512MB)
+# Use production mode to reduce memory usage
+CMD NODE_ENV=production NODE_OPTIONS="--max-old-space-size=400" npx medusa start
