@@ -26,7 +26,7 @@ Docker is like a container that runs your entire store. It handles all the techn
 3. Choose the version for your Mac:
    - **Apple Silicon (M1/M2/M3)**: Click "Mac with Apple chip"
    - **Intel Mac**: Click "Mac with Intel chip"
-   - Not sure? Click the Apple logo () in top-left corner ‚Üí "About This Mac" ‚Üí Look for "Chip" or "Processor"
+   - Not sure? Click the Apple logo () in top-left corner Üí "About This Mac" ‚Üí Look for "Chip" or "Processor"
 4. Open the downloaded file (Docker.dmg)
 5. Drag Docker icon to Applications folder
 6. Open Docker from Applications
@@ -194,7 +194,7 @@ cd "/home/YourName/Desktop/clothing-store-ecommerce-main"
 
 ## Part 5: Configure Your Store (CRITICAL - Do This First!)
 
-**‚ö†Ô∏è STOP! Before starting Docker, you MUST configure your environment variables!**
+**ö†Ô∏è STOP! Before starting Docker, you MUST configure your environment variables!**
 
 The setup script needs to know your warehouse location to calculate shipping costs. If you skip this, your store will use default values (Overland Park, KS) which might not be your actual location.
 
@@ -212,9 +212,9 @@ The setup script needs to know your warehouse location to calculate shipping cos
    - Rename the copy to `.env` (just `.env` with no `.example`)
 
 3. **Open `.env`** in a text editor:
-   - Mac: Right-click ‚Üí Open With ‚Üí TextEdit
-   - Windows: Right-click ‚Üí Open With ‚Üí Notepad
-   - Linux: Right-click ‚Üí Open With ‚Üí gedit or Text Editor
+   - Mac: Right-click Üí Open With ‚Üí TextEdit
+   - Windows: Right-click Üí Open With ‚Üí Notepad
+   - Linux: Right-click Üí Open With ‚Üí gedit or Text Editor
 
 ### Step 2: Set Your Warehouse Location (REQUIRED)
 
@@ -305,7 +305,7 @@ docker exec clothing-store-backend npm run full-setup
 
 **Important:** At the end, you'll see output like this:
 ```
-‚ö† NEXT STEPS:
+ö† NEXT STEPS:
 1. Update .env file - Add these values:
    NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY=pk_01abc123def456...
    NEXT_PUBLIC_MEDUSA_REGION_ID=reg_01xyz789...
@@ -319,9 +319,9 @@ docker exec clothing-store-backend npm run full-setup
 Now you need to add those three keys you just copied to your `.env` file.
 
 1. **Open your `.env` file** again:
-   - Mac: Right-click ‚Üí Open With ‚Üí TextEdit
-   - Windows: Right-click ‚Üí Open With ‚Üí Notepad
-   - Linux: Right-click ‚Üí Open With ‚Üí gedit or Text Editor
+   - Mac: Right-click Üí Open With ‚Üí TextEdit
+   - Windows: Right-click Üí Open With ‚Üí Notepad
+   - Linux: Right-click Üí Open With ‚Üí gedit or Text Editor
 
 2. **Find these three lines** and replace the values with what you copied from Step 3:
    ```
@@ -385,7 +385,7 @@ http://localhost:9000/app
 
 **If you see products on the homepage and can click around, congratulations! Your store is working!**
 
-**‚úÖ Verify Shipping is Working:**
+**úÖ Verify Shipping is Working:**
 1. Add a product to your cart
 2. Go to checkout and enter a shipping address
 3. You should see USPS shipping options with calculated rates
@@ -478,7 +478,7 @@ To send confirmation emails when customers place orders:
 
 ### Verify Your Email Address
 
-1. In SendGrid, go to Settings ‚Üí Sender Authentication
+1. In SendGrid, go to Settings Üí Sender Authentication
 2. Click "Verify a Single Sender"
 3. Fill out the form with your email
 4. Check your email and click the verification link
@@ -548,7 +548,7 @@ docker exec clothing-store-backend npm run full-setup
 Collections group products together (like "T-Shirts", "Jeans", "Hoodies").
 
 1. Go to admin: http://localhost:9000/app
-2. Click "Products" ‚Üí "Collections"
+2. Click "Products" Üí "Collections"
 3. Click on a collection to add/remove products
 4. Or create new collections
 
@@ -578,7 +578,7 @@ Collections group products together (like "T-Shirts", "Jeans", "Hoodies").
 
 ### Can't see .env file
 - Mac: Press `Cmd + Shift + .` in Finder
-- Windows: In File Explorer, click View tab ‚Üí check "Hidden items"
+- Windows: In File Explorer, click View tab Üí check "Hidden items"
 - Linux: Press `Ctrl + H` in file manager
 
 ### Need more help?
@@ -610,4 +610,4 @@ Now that your store is running:
 4. **Enable live payments**: Switch from Stripe test keys to live keys
 5. **Add more features**: See README.md for advanced customization
 
-**Congratulations! You now have a working e-commerce store!** üéâ
+**Congratulations! You now have a working e-commerce store!** üéâ

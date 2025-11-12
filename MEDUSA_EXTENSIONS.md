@@ -110,7 +110,7 @@ This guide covers the most valuable modules and features you can add to enhance 
 - All tutorials and guides
 
 ### Services with Costs (Often Free Tiers)
-- Stripe: Free to start, 2.9% + 30Â¢ per transaction
+- Stripe: Free to start, 2.9% + 30Â per transaction
 - SendGrid: 100 emails/day free, then $15+/month
 - AWS S3: First 5GB free, then $0.023/GB/month
 - PostHog: 1M events free, then $0.00036/event

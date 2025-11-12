@@ -6,11 +6,11 @@ This module provides USPS shipping rate calculation for Medusa e-commerce.
 
 ```
 usps-fulfillment/
-├── index.ts           # Module entry point
-├── service.ts         # Fulfillment provider service (main logic)
-├── usps-client.ts     # USPS API client
-├── types.ts           # TypeScript type definitions
-└── README.md          # This file
+��── index.ts           # Module entry point
+��── service.ts         # Fulfillment provider service (main logic)
+��── usps-client.ts     # USPS API client
+��── types.ts           # TypeScript type definitions
+��── README.md          # This file
 ```
 
 ## Files

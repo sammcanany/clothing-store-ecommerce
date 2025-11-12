@@ -159,14 +159,14 @@ RATE_LIMITING_ENABLED=false NODE_ENV=testing npm run dev
 
 ## Security Best Practices
 
-### ‚úÖ Do This
+### úÖ Do This
 - Use `development` mode for local development
 - Use `testing` mode for staging/pre-production
 - Use `production` mode for live deployments
 - Generate strong random secrets for production
 - Test with production mode before deploying
 
-### ‚ùå Don't Do This
+### ùå Don't Do This
 - Don't use development secrets in production
 - Don't disable rate limiting in production
 - Don't commit `.env` files with real secrets
