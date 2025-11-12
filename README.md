@@ -40,7 +40,7 @@ docker compose version
 
 ### 1. Configure Environment (REQUIRED)
 
-**âš ï¸ IMPORTANT: Do this BEFORE starting Docker containers!**
+**š ï¸ IMPORTANT: Do this BEFORE starting Docker containers!**
 
 Copy the environment template and configure your settings:
 
@@ -162,7 +162,7 @@ cd frontend && npm update
 ```
 
 ### Major Version Updates (Advanced)
-âš ï¸ **Test thoroughly before deploying** - Major updates may have breaking changes:
+š ï¸ **Test thoroughly before deploying** - Major updates may have breaking changes:
 
 - **Next.js 15**: Significant performance improvements but API changes
 - **React 19**: New features but potential compatibility issues
@@ -215,7 +215,7 @@ Once your store is running, use the admin panel to manage your products. Access 
 
 1. **Go to Products** page
 2. **Click on any product** to open details
-3. **Edit details:** Click â‹® menu â†’ Edit
+3. **Edit details:** Click ‹® menu â†’ Edit
 4. **Manage images:** Add, reorder, delete, set thumbnail
 5. **Update variants:** Add sizes, change prices
 6. **Change status:** Published/Draft
@@ -236,7 +236,7 @@ Each product can have multiple variants (sizes, colors, etc.):
 
 Organize products into collections:
 
-1. **Go to Products â†’ Collections**
+1. **Go to Products †’ Collections**
 2. **Create collection:** Name and handle
 3. **Add products:** Select products to include
 4. **Edit collection:** Change name, products
@@ -245,7 +245,7 @@ Organize products into collections:
 
 Create hierarchical categories:
 
-1. **Go to Products â†’ Categories**
+1. **Go to Products †’ Categories**
 2. **Create category:** Name, handle, description
 3. **Add products:** Assign products to categories
 4. **Nested categories:** Create subcategories
@@ -255,7 +255,7 @@ Create hierarchical categories:
 **Warning:** Deleting is permanent!
 
 1. **Open product details**
-2. **Click â‹® menu â†’ Delete**
+2. **Click ‹® menu â†’ Delete**
 3. **Confirm deletion**
 
 ### Bulk Operations
@@ -305,7 +305,7 @@ environment:
 3. Login with: `admin@test.com` / `supersecret`
 4. Go to **Settings > Regions**
 5. Click on your region (e.g., "Default Region")
-6. Click the **â‹®** menu > **Edit**
+6. Click the **‹®** menu > **Edit**
 7. In **Payment Providers** field, select **"Stripe (STRIPE)"**
 8. Click **Save**
 
@@ -364,10 +364,10 @@ The store includes a USPS fulfillment provider for real-time shipping rate calcu
 ### Overview
 
 The USPS integration provides:
-- âœ… Real-time shipping rate calculations
-- âœ… Multiple mail classes (Priority, Express, Ground Advantage, First-Class)
-- âœ… Calculated pricing based on weight, dimensions, and destination
-- âœ… Free API access (no monthly fees)
+- œ… Real-time shipping rate calculations
+- œ… Multiple mail classes (Priority, Express, Ground Advantage, First-Class)
+- œ… Calculated pricing based on weight, dimensions, and destination
+- œ… Free API access (no monthly fees)
 
 ### 1. Get USPS API Credentials
 
@@ -412,10 +412,10 @@ docker compose restart backend
 ### 4. Configure Shipping Options in Admin
 
 1. Open Admin Panel: http://localhost:9000/app
-2. Go to **Settings â†’ Locations & Shipping**
+2. Go to **Settings †’ Locations & Shipping**
 3. Click on your location (or create a new one)
 4. In **Fulfillment Providers** section:
-   - Click the three-dots icon â†’ **Edit**
+   - Click the three-dots icon †’ **Edit**
    - Check the box next to **USPS**
    - Click **Save**
 5. Create shipping options:
@@ -448,9 +448,9 @@ docker compose restart backend
 
 The integration includes default weight and dimension calculations. To customize based on your products:
 
-**Weight Calculation**: Edit `backend/src/modules/usps-fulfillment/service.ts` â†’ `calculateWeight()` method
+**Weight Calculation**: Edit `backend/src/modules/usps-fulfillment/service.ts` †’ `calculateWeight()` method
 
-**Dimensions**: Edit `backend/src/modules/usps-fulfillment/service.ts` â†’ `calculateDimensions()` method
+**Dimensions**: Edit `backend/src/modules/usps-fulfillment/service.ts` †’ `calculateDimensions()` method
 
 ### Testing
 
@@ -535,7 +535,7 @@ docker compose up -d --build
 
 Option 1: **Admin Panel** (Recommended)
 1. Go to http://localhost:9000/app
-2. Navigate to **Products** â†’ **Add Product**
+2. Navigate to **Products** †’ **Add Product**
 3. Fill details, add variants, set prices
 4. Assign to "Default Sales Channel"
 
@@ -546,23 +546,23 @@ Edit `backend/src/scripts/complete-setup.ts` and add more products, then rerun.
 
 ```
 E-Commerce Site/
-â”œâ”€â”€ docker-compose.yml          # Docker orchestration
-â”œâ”€â”€ backend/                    # Medusa v2 backend
-â”‚   â”œâ”€â”€ Dockerfile
-â”‚   â”œâ”€â”€ medusa-config.ts       # Medusa configuration
-â”‚   â””â”€â”€ src/
-â”‚       â”œâ”€â”€ api/               # Custom API routes
-â”‚       â”œâ”€â”€ scripts/
-â”‚       â”‚   â””â”€â”€ complete-setup.ts  # Automated store setup
-â”‚       â””â”€â”€ subscribers/       # Event subscribers
-â”œâ”€â”€ frontend/                   # Next.js storefront
-â”‚   â”œâ”€â”€ Dockerfile
-â”‚   â”œâ”€â”€ .env.local             # Auto-generated API keys
-â”‚   â””â”€â”€ src/
-â”‚       â”œâ”€â”€ pages/             # Next.js routes
-â”‚       â”œâ”€â”€ components/        # React components
-â”‚       â””â”€â”€ lib/               # Hooks & utilities
-â””â”€â”€ README.md
+”œâ”€â”€ docker-compose.yml          # Docker orchestration
+”œâ”€â”€ backend/                    # Medusa v2 backend
+”‚   â”œâ”€â”€ Dockerfile
+”‚   â”œâ”€â”€ medusa-config.ts       # Medusa configuration
+”‚   â””â”€â”€ src/
+”‚       â”œâ”€â”€ api/               # Custom API routes
+”‚       â”œâ”€â”€ scripts/
+”‚       â”‚   â””â”€â”€ complete-setup.ts  # Automated store setup
+”‚       â””â”€â”€ subscribers/       # Event subscribers
+”œâ”€â”€ frontend/                   # Next.js storefront
+”‚   â”œâ”€â”€ Dockerfile
+”‚   â”œâ”€â”€ .env.local             # Auto-generated API keys
+”‚   â””â”€â”€ src/
+”‚       â”œâ”€â”€ pages/             # Next.js routes
+”‚       â”œâ”€â”€ components/        # React components
+”‚       â””â”€â”€ lib/               # Hooks & utilities
+””â”€â”€ README.md
 ```
 
 ## Troubleshooting
@@ -696,11 +696,11 @@ docker compose restart backend
 
 #### Current Authentication Features
 
-- âœ… Email/password authentication (fully functional)
-- âœ… Google OAuth sign-in (requires credentials above)
-- âœ… Account modal with sign-in/sign-out
-- âœ… Protected orders and profile pages
-- âœ… Automatic redirect after authentication
+- œ… Email/password authentication (fully functional)
+- œ… Google OAuth sign-in (requires credentials above)
+- œ… Account modal with sign-in/sign-out
+- œ… Protected orders and profile pages
+- œ… Automatic redirect after authentication
 
 ### Access Container Shells
 
@@ -771,10 +771,10 @@ After setup, you can:
 The store includes **real-time USPS shipping rate calculation** with three shipping methods:
 
 ### Current Features
-- âœ… **Live Rate Calculation**: Real-time pricing for USPS Ground Advantage, Priority Mail, and Priority Mail Express
-- âœ… **Address Validation**: Automatic address verification and correction using USPS Address API
-- âœ… **Dynamic Weight Calculation**: Total weight calculated from all items in cart
-- âœ… **Three-Step Checkout**: Contact info â†’ Shipping method â†’ Payment
+- œ… **Live Rate Calculation**: Real-time pricing for USPS Ground Advantage, Priority Mail, and Priority Mail Express
+- œ… **Address Validation**: Automatic address verification and correction using USPS Address API
+- œ… **Dynamic Weight Calculation**: Total weight calculated from all items in cart
+- œ… **Three-Step Checkout**: Contact info â†’ Shipping method â†’ Payment
 
 ### Testing Environment
 The current setup uses USPS testing credentials (`USPS_CLIENT_ID` and `USPS_CLIENT_SECRET` in `.env`).
@@ -811,9 +811,9 @@ Consider third-party services like **ShipStation**, **EasyPost**, or **Shippo** 
 - Offer simpler API integration
 
 **API Documentation:**
-- Prices API: https://developers.usps.com/domesticpricesv3 (âœ… Currently implemented)
+- Prices API: https://developers.usps.com/domesticpricesv3 (œ… Currently implemented)
 - Labels API: https://developers.usps.com/domesticlabelsv3 (Ready for future implementation)
-- Address API: https://developers.usps.com/addressesv3 (âœ… Currently implemented)
+- Address API: https://developers.usps.com/addressesv3 (œ… Currently implemented)
 
 ---
 
