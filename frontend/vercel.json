@@ -4,35 +4,5 @@
   "installCommand": "npm install --legacy-peer-deps",
   "framework": "nextjs",
   "outputDirectory": ".next",
-  "regions": ["iad1"],
-  "env": {
-    "NEXT_PUBLIC_MEDUSA_BACKEND_URL": {
-      "description": "Your backend API URL (e.g., https://your-backend.railway.app or https://api.yourstore.com)",
-      "required": true
-    },
-    "NEXT_PUBLIC_BASE_URL": {
-      "description": "Your frontend URL (will be your Vercel domain)",
-      "required": true
-    },
-    "NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY": {
-      "description": "Medusa publishable API key (get from Medusa admin after backend deployment)",
-      "required": true
-    },
-    "NEXT_PUBLIC_MEDUSA_REGION_ID": {
-      "description": "Medusa region ID (get from Medusa admin after backend deployment)",
-      "required": true
-    },
-    "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY": {
-      "description": "Stripe publishable key (pk_live_... or pk_test_...)",
-      "required": true
-    },
-    "NODE_ENV": {
-      "description": "Environment mode",
-      "value": "production"
-    },
-    "NEXT_TELEMETRY_DISABLED": {
-      "description": "Disable Next.js telemetry",
-      "value": "1"
-    }
-  }
+  "regions": ["iad1"]
 }
