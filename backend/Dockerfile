@@ -12,9 +12,12 @@ RUN npm install --legacy-peer-deps
 # Copy application files
 COPY . .
 
+# Build backend only (skip admin to stay within free tier memory limits)
+RUN NODE_OPTIONS="--max-old-space-size=350" npx medusa build --skip-admin
+
 # Expose port
 EXPOSE 9000
 
 # Start server with memory limit for Render's free tier (512MB)
-# Use develop mode to avoid admin build requirement, bind to 0.0.0.0 for Render
-CMD NODE_OPTIONS="--max-old-space-size=400" npm run dev -- --host 0.0.0.0
+# API-only deployment - use admin locally when needed
+CMD NODE_OPTIONS="--max-old-space-size=400" npx medusa start --host 0.0.0.0
