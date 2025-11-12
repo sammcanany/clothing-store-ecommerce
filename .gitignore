@@ -56,3 +56,6 @@ data/
 
 # Export script
 export-clean.ps1
+
+# Environment files folder
+env-files/

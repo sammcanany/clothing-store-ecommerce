@@ -91,7 +91,7 @@ export const SecurityConfig = {
   database: {
     get ssl() {
       return SecurityConfig.isProduction ? {
-        rejectUnauthorized: true
+        rejectUnauthorized: false  // Supabase requires this for SSL
       } : false
     }
   },

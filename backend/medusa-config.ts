@@ -44,10 +44,9 @@ module.exports = defineConfig({
       secure: SecurityConfig.cookies.secure,
       httpOnly: SecurityConfig.cookies.httpOnly,
     },
-    databaseDriverOptions: SecurityConfig.database.ssl || {
-      ssl: false,
-      sslmode: "disable",
-    },
+    databaseDriverOptions: process.env.DATABASE_URL?.includes('supabase.co')
+      ? { ssl: { rejectUnauthorized: false } }
+      : SecurityConfig.database.ssl || { ssl: false, sslmode: "disable" },
   },
   admin: {
     backendUrl: process.env.MEDUSA_BACKEND_URL || "http://localhost:9000",
