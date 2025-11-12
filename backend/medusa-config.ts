@@ -38,6 +38,7 @@ module.exports = defineConfig({
       authCors: process.env.AUTH_CORS!,
       jwtSecret,
       cookieSecret,
+      port: parseInt(process.env.PORT || "9000", 10),
     },
     cookieOptions: {
       sameSite: SecurityConfig.cookies.sameSite as "strict" | "lax" | "none",
@@ -78,12 +79,21 @@ module.exports = defineConfig({
         ],
       },
     },
-    {
-      resolve: "@medusajs/medusa/event-bus-redis",
-      options: {
-        redisUrl: process.env.REDIS_URL,
-      },
-    },
+    // Use Redis event bus if REDIS_URL is provided, otherwise use local (in-memory)
+    ...(process.env.REDIS_URL
+      ? [
+          {
+            resolve: "@medusajs/medusa/event-bus-redis",
+            options: {
+              redisUrl: process.env.REDIS_URL,
+            },
+          },
+        ]
+      : [
+          {
+            resolve: "@medusajs/medusa/event-bus-local",
+          },
+        ]),
     {
       resolve: "@medusajs/medusa/payment",
       options: {
