@@ -39,6 +39,11 @@ module.exports = defineConfig({
       jwtSecret,
       cookieSecret,
     },
+    cookieOptions: {
+      sameSite: SecurityConfig.cookies.sameSite as "strict" | "lax" | "none",
+      secure: SecurityConfig.cookies.secure,
+      httpOnly: SecurityConfig.cookies.httpOnly,
+    },
     databaseDriverOptions: SecurityConfig.database.ssl || {
       ssl: false,
       sslmode: "disable",
