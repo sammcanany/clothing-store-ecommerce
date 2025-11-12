@@ -3,8 +3,11 @@ import { SecurityConfig } from "./src/config/security"
 
 loadEnv(process.env.NODE_ENV || "development", process.cwd())
 
-// Validate critical secrets based on environment
-if (SecurityConfig.secrets.requireStrong) {
+// Skip validation during build (environment variables aren't available)
+const isBuild = process.argv.includes('build')
+
+// Validate critical secrets based on environment (but not during build)
+if (SecurityConfig.secrets.requireStrong && !isBuild) {
   const minLength = SecurityConfig.secrets.minLength
 
   if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < minLength) {
@@ -20,9 +23,9 @@ if (SecurityConfig.secrets.requireStrong) {
 
 // Environment-appropriate fallback secrets
 const jwtSecret = process.env.JWT_SECRET ||
-  (SecurityConfig.isDevelopment ? "dev_jwt_secret_change_in_production" : undefined)
+  (SecurityConfig.isDevelopment || isBuild ? "dev_jwt_secret_change_in_production" : undefined)
 const cookieSecret = process.env.COOKIE_SECRET ||
-  (SecurityConfig.isDevelopment ? "dev_cookie_secret_change_in_production" : undefined)
+  (SecurityConfig.isDevelopment || isBuild ? "dev_cookie_secret_change_in_production" : undefined)
 
 if (!jwtSecret || !cookieSecret) {
   throw new Error("JWT_SECRET and COOKIE_SECRET must be set")
