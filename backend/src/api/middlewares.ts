@@ -1,5 +1,6 @@
 import { defineMiddlewares } from "@medusajs/medusa"
-import { MedusaRequest, MedusaResponse, MedusaNextFunction } from "@medusajs/framework/http"
+import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
+import { NextFunction } from "express"
 import { SecurityConfig } from "../config/security"
 
 // Simple in-memory rate limiter (for production, use Redis-based solution)
@@ -26,7 +27,7 @@ function rateLimit(options: {
   maxRequests: number
   keyPrefix: string
 }) {
-  return (req: MedusaRequest, res: MedusaResponse, next: MedusaNextFunction) => {
+  return (req: MedusaRequest, res: MedusaResponse, next: NextFunction) => {
     // Skip rate limiting if disabled (e.g., in development)
     if (!SecurityConfig.rateLimiting.enabled) {
       return next()
