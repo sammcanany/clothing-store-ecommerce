@@ -12,12 +12,11 @@ RUN npm install --legacy-peer-deps
 # Copy application files
 COPY . .
 
-# Build backend with aggressive memory limits for free tier
-RUN NODE_OPTIONS="--max-old-space-size=350" npx medusa build
+# Build backend only (admin disabled via env var)
+RUN NODE_OPTIONS="--max-old-space-size=400" npx medusa build
 
 # Expose port
 EXPOSE 9000
 
-# Start server with memory limit for Render's free tier (512MB)
-# API-only deployment - use admin locally when needed
+# Start in production mode with admin disabled (served separately on Vercel)
 CMD NODE_OPTIONS="--max-old-space-size=400" npx medusa start --host 0.0.0.0

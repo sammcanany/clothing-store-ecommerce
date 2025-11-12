@@ -52,6 +52,7 @@ module.exports = defineConfig({
       : SecurityConfig.database.ssl || { ssl: false, sslmode: "disable" },
   },
   admin: {
+    disable: process.env.DISABLE_MEDUSA_ADMIN === "true",
     backendUrl: process.env.MEDUSA_BACKEND_URL || "http://localhost:9000",
   },
   modules: [
