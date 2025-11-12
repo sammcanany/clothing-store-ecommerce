@@ -110,7 +110,7 @@ export default function AddressManagement({ customerId, addresses, onUpdate }: A
   const cancelEdit = () => {
     setIsAdding(false)
     setEditingId(null)
-    setFormData({ type: 'shipping', country_code: 'US' })
+    setFormData({ country_code: 'US' })
     setError('')
   }
 
