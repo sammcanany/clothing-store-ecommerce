@@ -19,5 +19,5 @@ RUN npm run build
 EXPOSE 9000
 
 # Start server with memory limit for Render's free tier (512MB)
-# Use production mode to reduce memory usage
-CMD NODE_ENV=production NODE_OPTIONS="--max-old-space-size=400" npx medusa start
+# Use production mode and bind to 0.0.0.0 for Render
+CMD NODE_ENV=production NODE_OPTIONS="--max-old-space-size=400" npx medusa start --host 0.0.0.0
