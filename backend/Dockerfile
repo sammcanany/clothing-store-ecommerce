@@ -15,5 +15,5 @@ COPY . .
 # Expose port
 EXPOSE 9000
 
-# Start development server
-CMD ["npm", "run", "dev"]
+# Run full setup then start development server
+CMD npm run full-setup && npm run dev
