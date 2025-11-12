@@ -6,8 +6,8 @@ import { medusaClient } from '@/lib/config/medusa-client'
 
 interface Order {
   id: string
-  display_id: number
-  created_at: string
+  display_id?: number
+  created_at: string | Date
   total: number
   subtotal: number
   item_subtotal: number
@@ -30,20 +30,20 @@ interface Order {
     province?: string
     postal_code?: string
     country_code?: string
-  }
+  } | null
   shipping_methods?: {
     name?: string
     shipping_option?: {
       name: string
     }
     amount: number
-  }[]
+  }[] | null
   items: {
     id: string
     title: string
     quantity: number
     unit_price: number
-  }[]
+  }[] | null
 }
 
 export default function OrdersPage() {
@@ -101,8 +101,9 @@ export default function OrdersPage() {
     }).format(amount)
   }
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+  const formatDate = (dateString: string | Date) => {
+    const date = typeof dateString === 'string' ? new Date(dateString) : dateString
+    return date.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
@@ -231,7 +232,7 @@ export default function OrdersPage() {
                 {/* Order Items Preview */}
                 <div className="px-6 py-4">
                   <div className="space-y-3">
-                    {order.items.slice(0, 2).map((item) => (
+                    {order.items?.slice(0, 2).map((item) => (
                       <div key={item.id} className="flex justify-between items-center">
                         <div className="flex-1">
                           <h4 className="font-medium text-neutral-900">{item.title}</h4>
@@ -242,7 +243,7 @@ export default function OrdersPage() {
                         </p>
                       </div>
                     ))}
-                    {order.items.length > 2 && (
+                    {order.items && order.items.length > 2 && (
                       <p className="text-sm text-neutral-600">
                         +{order.items.length - 2} more item{order.items.length - 2 !== 1 ? 's' : ''}
                       </p>
@@ -367,7 +368,7 @@ export default function OrdersPage() {
                 <div>
                   <h3 className="text-sm font-medium text-neutral-600 mb-2">Order Items</h3>
                   <div className="bg-neutral-50 rounded-lg p-4 space-y-4">
-                    {selectedOrder.items.map((item) => (
+                    {selectedOrder.items?.map((item) => (
                       <div key={item.id} className="flex justify-between items-center">
                         <div className="flex-1">
                           <h4 className="font-medium text-neutral-900">{item.title}</h4>

@@ -89,8 +89,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const cartId = localStorage.getItem('cart_id')
     if (!cartId) return
 
-    const response = await sdk.store.cart.deleteLineItem(cartId, lineId)
-    setCart(response.cart)
+    await sdk.store.cart.deleteLineItem(cartId, lineId)
+    await refreshCart()
   }
 
   const refreshCart = async () => {

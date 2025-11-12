@@ -290,12 +290,14 @@ export default function AddressManagement({ customerId, addresses, onUpdate }: A
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
-                      <span className="text-xs font-medium px-2 py-1 bg-neutral-100 text-neutral-700 rounded">
-                        {address.type || 'shipping'}
-                      </span>
-                      {address.is_default && (
+                      {address.is_default_shipping && (
                         <span className="text-xs font-medium px-2 py-1 bg-blue-100 text-blue-700 rounded">
-                          Default
+                          Default Shipping
+                        </span>
+                      )}
+                      {address.is_default_billing && (
+                        <span className="text-xs font-medium px-2 py-1 bg-green-100 text-green-700 rounded">
+                          Default Billing
                         </span>
                       )}
                     </div>

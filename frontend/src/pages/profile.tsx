@@ -37,7 +37,7 @@ export default function ProfilePage() {
       first_name: customer.first_name || '',
       last_name: customer.last_name || '',
       email: customer.email || '',
-      phone: customer.phone || '',
+      phone: (customer as any).phone || '',
     })
 
     // Fetch addresses
@@ -239,7 +239,7 @@ export default function ProfilePage() {
                           first_name: customer.first_name || '',
                           last_name: customer.last_name || '',
                           email: customer.email || '',
-                          phone: customer.phone || '',
+                          phone: (customer as any).phone || '',
                         })
                       }
                     }}
@@ -274,7 +274,7 @@ export default function ProfilePage() {
                 <div>
                   <p className="text-sm text-neutral-600 mb-1">Phone</p>
                   <p className="font-medium text-neutral-900">
-                    {customer.phone || 'Not set'}
+                    {(customer as any).phone || 'Not set'}
                   </p>
                 </div>
               </div>
