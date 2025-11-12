@@ -12,12 +12,9 @@ RUN npm install --legacy-peer-deps
 # Copy application files
 COPY . .
 
-# Build the application with production environment
-RUN NODE_ENV=production npm run build
-
 # Expose port
 EXPOSE 9000
 
 # Start server with memory limit for Render's free tier (512MB)
-# Use production mode and bind to 0.0.0.0 for Render
-CMD NODE_ENV=production NODE_OPTIONS="--max-old-space-size=400" npx medusa start --host 0.0.0.0
+# Use develop mode to avoid admin build requirement, bind to 0.0.0.0 for Render
+CMD NODE_OPTIONS="--max-old-space-size=400" npm run dev --host 0.0.0.0
